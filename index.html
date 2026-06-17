@@ -1,0 +1,1112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EE Lab · Weekly Report Builder v2</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.5.0/docx.umd.min.js"></script>
+<style>
+:root {
+  --navy:#0C2D6B; --navy-light:#1a4499; --gold:#C8960C; --gold-light:#f0b830;
+  --bg:#F0F3F9; --surface:#fff; --panel:#f8f9fc; --border:#dde3ef;
+  --text:#1a1f2e; --muted:#6b7280;
+  --success:#1a5e2a; --success-bg:#d4edda;
+  --warn:#7b4500; --warn-bg:#fff3cd;
+  --info:#0c2d6b; --info-bg:#d6e4ff;
+  --danger:#8b0000; --danger-bg:#fde8e8;
+  --purple:#5c005c; --purple-bg:#f3e8ff;
+  --radius:8px; --shadow:0 1px 4px rgba(12,45,107,.08); --shadow-md:0 4px 16px rgba(12,45,107,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.app{display:grid;grid-template-columns:440px 1fr;grid-template-rows:56px 1fr;height:100vh;overflow:hidden}
+
+/* TOP BAR */
+.topbar{grid-column:1/-1;background:var(--navy);display:flex;align-items:center;justify-content:space-between;padding:0 20px;border-bottom:2px solid var(--gold)}
+.topbar-brand{display:flex;align-items:center;gap:10px}
+.topbar-brand .dot{width:8px;height:8px;border-radius:50%;background:var(--gold)}
+.topbar-brand span{color:#fff;font-weight:600;font-size:14px}
+.topbar-brand small{color:#8fabd4;font-size:11px;margin-left:4px}
+.topbar-center{display:flex;align-items:center;gap:8px}
+.period-badge{background:rgba(200,150,12,.18);border:1px solid var(--gold);color:var(--gold);padding:5px 14px;border-radius:20px;font-size:12px;font-weight:600;font-family:'JetBrains Mono',monospace;cursor:pointer;transition:all .15s}
+.period-badge:hover{background:rgba(200,150,12,.28)}
+.holiday-banner{background:#7b1a00;color:#ffd0b0;padding:4px 12px;border-radius:12px;font-size:11px;font-weight:600;display:none}
+.topbar-actions{display:flex;gap:7px}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;border:none;transition:all .15s;text-decoration:none;white-space:nowrap}
+.btn-ghost{background:rgba(255,255,255,.08);color:#c8d8f0}.btn-ghost:hover{background:rgba(255,255,255,.16);color:#fff}
+.btn-gold{background:var(--gold);color:var(--navy);font-weight:700}.btn-gold:hover{background:var(--gold-light)}
+.btn-navy{background:var(--navy-light);color:#fff}.btn-navy:hover{background:#2055b8}
+.btn-sm{padding:5px 10px;font-size:11px}
+.btn-danger{background:#fde8e8;color:#8b0000}.btn-danger:hover{background:#f5c2c2}
+.btn-success{background:#d4edda;color:#1a5e2a}.btn-success:hover{background:#b8dfc4}
+
+/* PANELS */
+.panel-form{background:var(--surface);border-right:1px solid var(--border);overflow-y:auto;display:flex;flex-direction:column}
+.panel-tabs{display:flex;border-bottom:1px solid var(--border);background:var(--panel);flex-shrink:0;overflow-x:auto}
+.tab{flex:1;min-width:70px;padding:10px 6px;font-size:11px;font-weight:600;text-align:center;cursor:pointer;color:var(--muted);border-bottom:2px solid transparent;transition:all .15s;user-select:none;white-space:nowrap}
+.tab.active{color:var(--navy);border-bottom-color:var(--gold);background:#fff}
+.tab-content{display:none;padding:14px;flex:1}
+.tab-content.active{display:block}
+
+/* BANNERS */
+.stale-banner{background:#fff3cd;border:1px solid #f0c040;border-left:4px solid #e6a000;border-radius:6px;padding:10px 12px;margin-bottom:12px;display:none}
+.stale-banner h4{font-size:12px;font-weight:700;color:#7b4500;margin-bottom:4px}
+.stale-item{font-size:11px;color:#7b4500;padding:2px 0}
+.carry-banner{background:#d6e4ff;border:1px solid #91b8f5;border-left:4px solid var(--navy);border-radius:6px;padding:10px 12px;margin-bottom:12px;display:none}
+.carry-banner h4{font-size:12px;font-weight:700;color:var(--navy);margin-bottom:4px}
+
+/* FORMS */
+.field-group{margin-bottom:12px}
+.field-row{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+label{display:block;font-size:10px;font-weight:700;color:var(--muted);text-transform:uppercase;letter-spacing:.5px;margin-bottom:4px}
+input[type=text],input[type=date],select,textarea{width:100%;padding:7px 9px;border:1px solid var(--border);border-radius:6px;font-size:12px;font-family:'Inter',sans-serif;color:var(--text);background:var(--panel);transition:border-color .15s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--navy);background:#fff}
+textarea{resize:vertical;min-height:70px}
+
+.section-divider{display:flex;align-items:center;gap:8px;margin:16px 0 10px}
+.section-divider span{font-size:10px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.8px;white-space:nowrap}
+.section-divider::before,.section-divider::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* TASK CARDS */
+.task-list{display:flex;flex-direction:column;gap:7px}
+.task-card-form{border:1px solid var(--border);border-radius:var(--radius);background:var(--panel);overflow:hidden}
+.task-card-form.stale-flag{border-color:#f0c040;background:#fffdf0}
+.task-card-header{display:flex;align-items:center;gap:7px;padding:7px 9px;background:var(--surface);border-bottom:1px solid var(--border);cursor:pointer}
+.task-card-header .task-num{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:var(--gold);background:var(--navy);padding:2px 5px;border-radius:3px}
+.task-card-header .task-title-preview{flex:1;font-size:12px;font-weight:500;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.stale-icon{font-size:13px;title:'Stale task'}
+.task-card-body{padding:10px;display:none}
+.task-card-body.open{display:block}
+
+/* STATUS + DOMAIN TAGS */
+.status-pick,.domain-pick{display:flex;flex-wrap:wrap;gap:4px;margin-top:4px}
+.tag-opt{padding:3px 8px;border-radius:4px;font-size:10px;font-weight:700;cursor:pointer;border:1.5px solid transparent;opacity:.55;transition:all .12s}
+.tag-opt.selected{opacity:1;border-color:currentColor}
+.status-completed{background:#d4edda;color:#1a5e2a}
+.status-ongoing{background:#d6e4ff;color:#0c2d6b}
+.status-awaiting{background:#fff3cd;color:#7b4500}
+.status-stalled{background:#fde8e8;color:#8b0000}
+.status-progress{background:#fff3cd;color:#7b4500}
+.status-initiated{background:#f3e8ff;color:#5c005c}
+.domain-infra{background:#e0f0ff;color:#003d7a}
+.domain-auto{background:#fff0d6;color:#6b3a00}
+.domain-startup{background:#e8f5e9;color:#1b5e20}
+.domain-docs{background:#f3e5f5;color:#4a148c}
+.domain-hardware{background:#fce4ec;color:#880e4f}
+.domain-admin{background:#e8eaf6;color:#1a237e}
+.domain-training{background:#e0f7fa;color:#006064}
+
+/* PAST REPORTS */
+.past-list{display:flex;flex-direction:column;gap:6px}
+.past-item{display:flex;align-items:center;gap:9px;padding:9px 11px;border:1px solid var(--border);border-radius:7px;background:var(--panel)}
+.past-item-info{flex:1}
+.past-item-period{font-size:12px;font-weight:600;color:var(--navy)}
+.past-item-meta{font-size:10px;color:var(--muted)}
+.past-item-actions{display:flex;gap:4px}
+.empty-state{text-align:center;padding:32px 16px;color:var(--muted)}
+.empty-state .icon{font-size:28px;margin-bottom:6px}
+
+/* HOLIDAY MANAGER */
+.holiday-list{display:flex;flex-direction:column;gap:5px;margin-top:8px;max-height:200px;overflow-y:auto}
+.holiday-item{display:flex;align-items:center;gap:8px;padding:5px 8px;background:var(--panel);border:1px solid var(--border);border-radius:5px;font-size:11px}
+.holiday-item .h-date{font-family:'JetBrains Mono',monospace;color:var(--navy);font-weight:600;width:90px;flex-shrink:0}
+.holiday-item .h-name{flex:1;color:var(--text)}
+.holiday-item .h-type{font-size:9px;padding:1px 5px;border-radius:3px;background:#e8ecf5;color:var(--muted);flex-shrink:0}
+
+/* PREVIEW */
+.panel-preview{overflow-y:auto;background:#e8ecf5;display:flex;flex-direction:column}
+.preview-topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:7px 14px;display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.preview-topbar span{font-size:11px;color:var(--muted);font-weight:500}
+.preview-page{margin:18px auto;width:794px;min-height:1000px;background:#fff;box-shadow:var(--shadow-md);border-radius:2px;overflow:hidden}
+
+/* REPORT STYLES */
+.rpt-header{background:var(--navy);padding:22px 30px 14px;border-bottom:4px solid var(--gold)}
+.rpt-header h1{color:#fff;font-size:24px;font-weight:700;letter-spacing:-.3px}
+.rpt-header .org{color:#8fabd4;font-size:11px;margin-top:2px}
+.rpt-header .meta{display:flex;gap:24px;margin-top:10px}
+.rpt-header .meta-item label{color:var(--gold);font-size:9px;font-weight:700;text-transform:uppercase;letter-spacing:.8px;display:block}
+.rpt-header .meta-item span{color:#fff;font-size:12px}
+.rpt-kpi{display:grid;grid-template-columns:repeat(4,1fr);background:#091f4d}
+.kpi-cell{padding:12px 14px;border-right:1px solid rgba(200,150,12,.25);text-align:center}
+.kpi-cell:last-child{border-right:none}
+.kpi-val{font-size:24px;font-weight:700;color:var(--gold);font-family:'JetBrains Mono',monospace}
+.kpi-label{font-size:9px;color:#8fabd4;text-transform:uppercase;letter-spacing:.5px;margin-top:2px}
+.rpt-body{padding:20px 30px}
+.rpt-section-head{background:var(--navy);color:#fff;font-size:10px;font-weight:700;letter-spacing:1.2px;padding:6px 12px;margin:20px -30px 0;text-transform:uppercase}
+.rpt-task{padding:10px 0 7px;border-bottom:1px solid var(--border)}
+.rpt-task-title{display:flex;align-items:center;gap:9px;margin-bottom:4px;flex-wrap:wrap}
+.rpt-task-num{font-family:'JetBrains Mono',monospace;font-size:10px;font-weight:700;color:var(--gold)}
+.rpt-task-name{font-size:13px;font-weight:600;color:var(--navy);flex:1}
+.rpt-status{padding:2px 7px;border-radius:3px;font-size:9px;font-weight:700;white-space:nowrap}
+.rpt-domain{padding:2px 7px;border-radius:3px;font-size:9px;font-weight:600;white-space:nowrap}
+.rpt-body-text{font-size:11px;color:#444;line-height:1.6;padding-left:26px;margin-bottom:3px}
+.rpt-link{display:inline-flex;align-items:center;gap:4px;font-size:10px;color:var(--gold);text-decoration:none;font-weight:600;padding-left:26px;margin-top:2px}
+.rpt-bullet{font-size:11px;color:#555;padding-left:38px;margin-bottom:2px;position:relative}
+.rpt-bullet::before{content:'–';position:absolute;left:26px}
+.rpt-box{background:#f4f6fa;border-left:4px solid var(--navy);padding:12px 14px;margin:10px 0;border-radius:0 5px 5px 0;font-size:11px;color:#333;line-height:1.7}
+.rpt-next-item{display:flex;gap:9px;padding:6px 0;border-bottom:1px dashed var(--border);font-size:11px;color:#444}
+.rpt-next-num{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--muted);width:22px;flex-shrink:0}
+.rpt-footer{margin:20px -30px 0;padding:10px 30px;border-top:2px solid var(--navy);display:flex;align-items:center;justify-content:space-between;background:var(--panel)}
+.rpt-footer .sig{font-size:10px;color:var(--muted)}
+.rpt-footer .sig strong{color:var(--navy)}
+.rpt-footer a{color:var(--gold);font-weight:600;font-size:10px}
+
+/* ANALYTICS */
+.analytics-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.analytics-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px}
+.analytics-card h4{font-size:11px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px}
+.analytics-card.full{grid-column:1/-1}
+canvas{width:100%!important;display:block}
+.stat-row{display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px}
+.stat-row:last-child{border-bottom:none}
+.stat-label{color:var(--muted)}
+.stat-val{font-weight:700;color:var(--navy);font-family:'JetBrains Mono',monospace}
+.week-indicator{text-align:center;padding:16px;border-radius:8px;margin-bottom:12px}
+.week-indicator .wi-label{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.8px}
+.week-indicator .wi-val{font-size:28px;font-weight:700;margin:4px 0}
+.week-light{background:#d4edda;color:#1a5e2a}
+.week-medium{background:#fff3cd;color:#7b4500}
+.week-heavy{background:#fde8e8;color:#8b0000}
+.stale-table{width:100%;border-collapse:collapse;font-size:11px}
+.stale-table th{text-align:left;padding:5px 8px;background:var(--panel);color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.5px}
+.stale-table td{padding:6px 8px;border-bottom:1px solid var(--border)}
+.stale-weeks{font-weight:700;color:#8b0000;font-family:'JetBrains Mono',monospace}
+
+/* PRINT */
+@media print{
+  body{background:#fff}
+  .app{display:block;height:auto}
+  .topbar,.panel-form,.preview-topbar{display:none!important}
+  .panel-preview{overflow:visible;background:#fff}
+  .preview-page{margin:0;width:100%;box-shadow:none}
+  .rpt-section-head{margin:20px 0 0}
+  .rpt-footer{margin:20px 0 0}
+}
+
+/* TOAST */
+.toast{position:fixed;bottom:22px;right:22px;background:var(--navy);color:#fff;padding:9px 16px;border-radius:7px;font-size:12px;font-weight:500;box-shadow:var(--shadow-md);z-index:999;transform:translateY(60px);opacity:0;transition:all .22s;border-left:3px solid var(--gold)}
+.toast.show{transform:translateY(0);opacity:1}
+
+/* MODAL */
+.modal-overlay{position:fixed;inset:0;background:rgba(10,20,50,.55);z-index:200;display:none;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:#fff;border-radius:10px;padding:22px;width:480px;max-width:95vw;max-height:80vh;overflow-y:auto;box-shadow:0 8px 32px rgba(0,0,0,.2)}
+.modal h3{font-size:15px;font-weight:700;color:var(--navy);margin-bottom:14px}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:16px}
+
+::-webkit-scrollbar{width:4px}::-webkit-scrollbar-track{background:transparent}::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px}
+</style>
+</head>
+<body>
+<div class="app">
+
+<!-- TOP BAR -->
+<div class="topbar">
+  <div class="topbar-brand">
+    <div class="dot"></div>
+    <span>EE Lab · Report Builder <small>v2 · KLE-CTIE</small></span>
+  </div>
+  <div class="topbar-center">
+    <div class="period-badge" id="period-badge" onclick="openPeriodModal()" title="Click to adjust period">📅 —</div>
+    <div class="holiday-banner" id="holiday-banner"></div>
+  </div>
+  <div class="topbar-actions">
+    <button class="btn btn-ghost btn-sm" onclick="saveReportToStorage()">💾 Save</button>
+    <button class="btn btn-ghost btn-sm" onclick="exportJSON()">⬇ JSON</button>
+    <button class="btn btn-navy btn-sm" onclick="exportDOCX()">📄 DOCX</button>
+    <button class="btn btn-gold btn-sm" onclick="window.print()">🖨 PDF</button>
+  </div>
+</div>
+
+<!-- LEFT PANEL -->
+<div class="panel-form">
+  <div class="panel-tabs">
+    <div class="tab active" onclick="switchTab('form')">✏️ Build</div>
+    <div class="tab" onclick="switchTab('paste')">📋 Import</div>
+    <div class="tab" onclick="switchTab('history')">🕘 History</div>
+    <div class="tab" onclick="switchTab('analytics')">📊 Analytics</div>
+    <div class="tab" onclick="switchTab('holidays')">📆 Holidays</div>
+  </div>
+
+  <!-- BUILD TAB -->
+  <div id="tab-form" class="tab-content active">
+    <div id="stale-banner" class="stale-banner">
+      <h4>⚠ Stale Tasks Detected</h4>
+      <div id="stale-items"></div>
+    </div>
+    <div id="carry-banner" class="carry-banner">
+      <h4>↩ Unfinished tasks carried forward from last week</h4>
+      <div id="carry-items" style="font-size:11px;color:var(--navy)"></div>
+    </div>
+
+    <div class="field-group">
+      <label>Submitted By</label>
+      <input type="text" id="f-author" value="Rakesh H. Chheda, Lab Asst, EE Lab, KLE-CTIE" oninput="renderPreview()">
+    </div>
+    <div class="field-group">
+      <label>Organisation</label>
+      <input type="text" id="f-org" value="Centre for Technology Innovation & Entrepreneurship (CTIE), KLE Technological University" oninput="renderPreview()">
+    </div>
+
+    <div class="section-divider"><span>Routine Tasks (01–03)</span></div>
+    <div id="routine-list" class="task-list"></div>
+    <button class="btn btn-ghost btn-sm" style="margin-top:8px;width:100%" onclick="addTask('routine')">+ Add Routine Task</button>
+
+    <div class="section-divider"><span>Projects & Initiatives</span></div>
+    <div id="project-list" class="task-list"></div>
+    <button class="btn btn-ghost btn-sm" style="margin-top:8px;width:100%" onclick="addTask('project')">+ Add Project</button>
+
+    <div class="section-divider"><span>Summary & Next Week</span></div>
+    <div class="field-group">
+      <label>Overall Summary</label>
+      <textarea id="f-summary" rows="3" oninput="renderPreview()"></textarea>
+    </div>
+    <div class="field-group">
+      <label>Overall Focus</label>
+      <textarea id="f-focus" rows="2" oninput="renderPreview()"></textarea>
+    </div>
+    <div class="field-group">
+      <label>Next Week's Plan (one per line)</label>
+      <textarea id="f-next" rows="4" oninput="renderPreview()"></textarea>
+    </div>
+    <div class="field-row">
+      <div class="field-group">
+        <label>Weekly Breakup URL</label>
+        <input type="text" id="f-breakup-url" oninput="renderPreview()">
+      </div>
+      <div class="field-group">
+        <label>Past Reports URL</label>
+        <input type="text" id="f-archive-url" oninput="renderPreview()">
+      </div>
+    </div>
+    <div style="height:16px"></div>
+  </div>
+
+  <!-- IMPORT TAB -->
+  <div id="tab-paste" class="tab-content">
+    <div class="section-divider"><span>Paste & Parse</span></div>
+    <p style="font-size:11px;color:var(--muted);margin-bottom:10px">Paste text from a previous report. Headings become task titles, bullets become sub-points.</p>
+    <textarea id="paste-input" rows="14" placeholder="Paste report text here..."></textarea>
+    <button class="btn btn-navy" style="width:100%;margin-top:10px" onclick="parsePastedText()">⚡ Parse & Import Tasks</button>
+  </div>
+
+  <!-- HISTORY TAB -->
+  <div id="tab-history" class="tab-content">
+    <div class="section-divider"><span>Saved Reports</span></div>
+    <div id="past-list-container"></div>
+    <div style="height:10px"></div>
+    <div class="section-divider"><span>New Report</span></div>
+    <button class="btn btn-success" style="width:100%;margin-bottom:8px" onclick="newReport()">+ New Report (carry forward)</button>
+    <button class="btn btn-ghost" style="width:100%;margin-bottom:8px" onclick="newBlankReport()">+ New Blank Report</button>
+    <div class="section-divider"><span>Import JSON</span></div>
+    <input type="file" id="json-import" accept=".json" style="display:none" onchange="importJSON(event)">
+    <button class="btn btn-ghost" style="width:100%" onclick="document.getElementById('json-import').click()">📂 Load JSON Snapshot</button>
+  </div>
+
+  <!-- ANALYTICS TAB -->
+  <div id="tab-analytics" class="tab-content">
+    <div id="analytics-root"></div>
+  </div>
+
+  <!-- HOLIDAYS TAB -->
+  <div id="tab-holidays" class="tab-content">
+    <div class="section-divider"><span>Add Custom Holiday</span></div>
+    <div class="field-row">
+      <div class="field-group">
+        <label>Date</label>
+        <input type="date" id="h-date">
+      </div>
+      <div class="field-group">
+        <label>Name</label>
+        <input type="text" id="h-name" placeholder="e.g. Ugadi">
+      </div>
+    </div>
+    <button class="btn btn-navy btn-sm" style="width:100%;margin-bottom:12px" onclick="addCustomHoliday()">+ Add Holiday</button>
+    <div class="section-divider"><span>All Holidays (2026)</span></div>
+    <div id="holiday-list-display"></div>
+  </div>
+</div>
+
+<!-- RIGHT PANEL -->
+<div class="panel-preview">
+  <div class="preview-topbar">
+    <span>Live Preview — auto-updates</span>
+    <div style="display:flex;gap:7px">
+      <button class="btn btn-ghost btn-sm" onclick="window.print()">🖨 Print/PDF</button>
+      <button class="btn btn-gold btn-sm" onclick="exportDOCX()">📄 DOCX</button>
+    </div>
+  </div>
+  <div id="preview-root" style="padding:0 0 40px"></div>
+</div>
+</div>
+
+<!-- PERIOD MODAL -->
+<div class="modal-overlay" id="period-modal">
+  <div class="modal">
+    <h3>📅 Adjust Reporting Period</h3>
+    <div class="field-row">
+      <div class="field-group"><label>Period Start (Monday)</label><input type="date" id="m-start"></div>
+      <div class="field-group"><label>Period End (Saturday)</label><input type="date" id="m-end"></div>
+    </div>
+    <div id="m-holiday-note" style="font-size:11px;color:#7b4500;margin-top:6px;display:none"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" onclick="closePeriodModal()">Cancel</button>
+      <button class="btn btn-gold" onclick="applyPeriod()">Apply</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ═══ HOLIDAYS ═══════════════════════════════════════════════
+const BUILTIN_HOLIDAYS_2026 = [
+  {date:'2026-01-01',name:"New Year's Day",type:'national'},
+  {date:'2026-01-14',name:'Makar Sankranti / Pongal',type:'national'},
+  {date:'2026-01-26',name:'Republic Day',type:'national'},
+  {date:'2026-03-17',name:'Holi',type:'national'},
+  {date:'2026-03-30',name:'Ram Navami',type:'national'},
+  {date:'2026-04-02',name:'Mahavir Jayanti',type:'national'},
+  {date:'2026-04-03',name:'Good Friday',type:'national'},
+  {date:'2026-04-14',name:'Ambedkar Jayanti / Ugadi',type:'karnataka'},
+  {date:'2026-04-30',name:'Basava Jayanti',type:'karnataka'},
+  {date:'2026-05-01',name:'Labour Day / May Day',type:'national'},
+  {date:'2026-06-10',name:'Eid ul-Adha (approx)',type:'national'},
+  {date:'2026-07-06',name:'Muharram (approx)',type:'national'},
+  {date:'2026-08-03',name:'Nagara Panchami',type:'karnataka'},
+  {date:'2026-08-15',name:'Independence Day',type:'national'},
+  {date:'2026-08-21',name:'Onam / Raksha Bandhan',type:'national'},
+  {date:'2026-08-26',name:'Janmashtami',type:'national'},
+  {date:'2026-09-03',name:'Ganesh Chaturthi',type:'national'},
+  {date:'2026-10-02',name:'Gandhi Jayanti',type:'national'},
+  {date:'2026-10-20',name:'Dussehra / Dasara',type:'national'},
+  {date:'2026-11-01',name:'Kannada Rajyotsava',type:'karnataka'},
+  {date:'2026-11-04',name:'Diwali / Naraka Chaturdashi',type:'national'},
+  {date:'2026-11-05',name:'Diwali',type:'national'},
+  {date:'2026-11-25',name:'Guru Nanak Jayanti',type:'national'},
+  {date:'2026-12-25',name:'Christmas',type:'national'},
+];
+
+function getCustomHolidays() { return JSON.parse(localStorage.getItem('ee_custom_holidays')||'[]'); }
+function getAllHolidays() {
+  const custom = getCustomHolidays();
+  return [...BUILTIN_HOLIDAYS_2026, ...custom].sort((a,b)=>a.date.localeCompare(b.date));
+}
+function isHoliday(dateStr) { return getAllHolidays().some(h=>h.date===dateStr); }
+function getHolidayName(dateStr) { const h=getAllHolidays().find(h=>h.date===dateStr); return h?h.name:null; }
+
+function addCustomHoliday() {
+  const d=document.getElementById('h-date').value, n=document.getElementById('h-name').value.trim();
+  if (!d||!n) { toast('Enter both date and name'); return; }
+  const list=getCustomHolidays();
+  if (list.find(h=>h.date===d)) { toast('Holiday already exists for this date'); return; }
+  list.push({date:d,name:n,type:'custom'});
+  localStorage.setItem('ee_custom_holidays',JSON.stringify(list));
+  document.getElementById('h-date').value=''; document.getElementById('h-name').value='';
+  renderHolidayList(); toast('Holiday added ✓'); autoFillPeriod();
+}
+function removeCustomHoliday(date) {
+  const list=getCustomHolidays().filter(h=>h.date!==date);
+  localStorage.setItem('ee_custom_holidays',JSON.stringify(list));
+  renderHolidayList(); autoFillPeriod();
+}
+function renderHolidayList() {
+  const all=getAllHolidays();
+  const custom=getCustomHolidays().map(h=>h.date);
+  document.getElementById('holiday-list-display').innerHTML=`<div class="holiday-list">${
+    all.map(h=>`<div class="holiday-item">
+      <span class="h-date">${h.date}</span>
+      <span class="h-name">${h.name}</span>
+      <span class="h-type">${h.type}</span>
+      ${custom.includes(h.date)?`<button class="btn btn-danger btn-sm" style="padding:2px 6px" onclick="removeCustomHoliday('${h.date}')">✕</button>`:''}
+    </div>`).join('')
+  }</div>`;
+}
+
+// ═══ AUTO DATE LOGIC ════════════════════════════════════════
+function toDateStr(d) { return d.toISOString().split('T')[0]; }
+function addDays(d,n) { const r=new Date(d); r.setDate(r.getDate()+n); return r; }
+function parseDate(s) { const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
+
+function autoFillPeriod() {
+  const today=new Date(); today.setHours(0,0,0,0);
+  const dow=today.getDay(); // 0=Sun,1=Mon,...,6=Sat
+  let mon, sat;
+  if (dow===1) { // Monday — previous week
+    mon=addDays(today,-7);
+    sat=addDays(today,-2);
+  } else {
+    // Find this week's Monday
+    const diff=dow===0?-6:1-dow;
+    mon=addDays(today,diff);
+    sat=addDays(today,6+diff-(dow===0?0:0));
+    // If sat > today, clamp to today
+    if (sat>today) sat=today;
+    // If sat is Sunday, go back to Sat
+    if (sat.getDay()===0) sat=addDays(sat,-1);
+  }
+  // If period-end (sat) is a holiday, step back to Fri
+  let satStr=toDateStr(sat);
+  const satHoliday=getHolidayName(satStr);
+  if (satHoliday) { sat=addDays(sat,-1); satStr=toDateStr(sat); }
+  // Check submission day (next Mon)
+  const nextMon=addDays(sat, sat.getDay()===6?2:1);
+  const nextMonStr=toDateStr(nextMon);
+  const deadlineHoliday=getHolidayName(nextMonStr);
+
+  state.start=toDateStr(mon);
+  state.end=satStr;
+  updatePeriodBadge();
+  updateHolidayBanner(satHoliday, deadlineHoliday, nextMonStr);
+}
+
+function updatePeriodBadge() {
+  document.getElementById('period-badge').textContent='📅 '+periodLabel();
+}
+function updateHolidayBanner(satHol, monHol, monStr) {
+  const el=document.getElementById('holiday-banner');
+  if (monHol) {
+    el.style.display='block';
+    el.textContent=`⚠ Deadline Mon ${monStr} is ${monHol} — shifted to Tue`;
+  } else if (satHol) {
+    el.style.display='block';
+    el.textContent=`📅 Sat was ${satHol} — period ends Fri`;
+  } else { el.style.display='none'; }
+}
+
+function openPeriodModal() {
+  document.getElementById('m-start').value=state.start||'';
+  document.getElementById('m-end').value=state.end||'';
+  checkModalHolidays();
+  document.getElementById('period-modal').classList.add('open');
+}
+function closePeriodModal() { document.getElementById('period-modal').classList.remove('open'); }
+function checkModalHolidays() {
+  const s=document.getElementById('m-start').value, e=document.getElementById('m-end').value;
+  const note=document.getElementById('m-holiday-note');
+  const msgs=[];
+  if (s&&isHoliday(s)) msgs.push(`Start ${s} is ${getHolidayName(s)}`);
+  if (e&&isHoliday(e)) msgs.push(`End ${e} is ${getHolidayName(e)}`);
+  note.style.display=msgs.length?'block':'none';
+  note.textContent=msgs.join(' · ');
+}
+function applyPeriod() {
+  state.start=document.getElementById('m-start').value;
+  state.end=document.getElementById('m-end').value;
+  closePeriodModal(); updatePeriodBadge(); renderPreview();
+}
+
+// ═══ STATE ══════════════════════════════════════════════════
+let state = {
+  author:'Rakesh H. Chheda, Lab Asst, EE Lab, KLE-CTIE',
+  org:'Centre for Technology Innovation & Entrepreneurship (CTIE), KLE Technological University',
+  start:'', end:'',
+  routineTasks:[], projectTasks:[],
+  summary:'', focus:'', next:'',
+  breakupUrl:'', archiveUrl:'',
+};
+
+const STATUS_LIST=[
+  {key:'completed',label:'Completed',cls:'status-completed'},
+  {key:'ongoing',label:'Ongoing',cls:'status-ongoing'},
+  {key:'awaiting',label:'Awaiting Inputs',cls:'status-awaiting'},
+  {key:'stalled',label:'Works Stalled',cls:'status-stalled'},
+  {key:'progress',label:'In Progress',cls:'status-progress'},
+  {key:'initiated',label:'Self-Initiated',cls:'status-initiated'},
+];
+const STATUS_STYLE={
+  completed:{bg:'#d4edda',color:'#1a5e2a'},
+  ongoing:{bg:'#d6e4ff',color:'#0c2d6b'},
+  awaiting:{bg:'#fff3cd',color:'#7b4500'},
+  stalled:{bg:'#fde8e8',color:'#8b0000'},
+  progress:{bg:'#fff3cd',color:'#7b4500'},
+  initiated:{bg:'#f3e8ff',color:'#5c005c'},
+};
+const DOMAIN_LIST=[
+  {key:'infra',label:'Infrastructure',cls:'domain-infra'},
+  {key:'auto',label:'Automation',cls:'domain-auto'},
+  {key:'startup',label:'Startup Support',cls:'domain-startup'},
+  {key:'docs',label:'Documentation',cls:'domain-docs'},
+  {key:'hardware',label:'Hardware',cls:'domain-hardware'},
+  {key:'admin',label:'Admin',cls:'domain-admin'},
+  {key:'training',label:'Training',cls:'domain-training'},
+];
+const DOMAIN_STYLE={
+  infra:{bg:'#e0f0ff',color:'#003d7a'},
+  auto:{bg:'#fff0d6',color:'#6b3a00'},
+  startup:{bg:'#e8f5e9',color:'#1b5e20'},
+  docs:{bg:'#f3e5f5',color:'#4a148c'},
+  hardware:{bg:'#fce4ec',color:'#880e4f'},
+  admin:{bg:'#e8eaf6',color:'#1a237e'},
+  training:{bg:'#e0f7fa',color:'#006064'},
+};
+
+// ═══ STALE DETECTION ════════════════════════════════════════
+function detectStaleTasks() {
+  const allReports=JSON.parse(localStorage.getItem('ee_reports')||'[]');
+  if (allReports.length<2) return [];
+  const stale=[];
+  const allCurrent=[...state.routineTasks,...state.projectTasks];
+  allCurrent.forEach(t=>{
+    if (t.status==='completed') return;
+    let weeks=1;
+    for (let i=0;i<allReports.length;i++) {
+      const rep=allReports[i];
+      const prevTasks=[...(rep.routineTasks||[]),...(rep.projectTasks||[])];
+      const match=prevTasks.find(p=>p.title&&t.title&&p.title.toLowerCase()===t.title.toLowerCase()&&p.status!=='completed');
+      if (match) weeks++; else break;
+    }
+    if (weeks>=2) stale.push({title:t.title,weeks,status:t.status});
+  });
+  return stale;
+}
+
+function renderStaleBanner() {
+  const stale=detectStaleTasks();
+  const banner=document.getElementById('stale-banner');
+  const items=document.getElementById('stale-items');
+  if (stale.length) {
+    banner.style.display='block';
+    items.innerHTML=stale.map(s=>`<div class="stale-item">⚠ <strong>${esc(s.title)}</strong> — ${s.status} for ${s.weeks} weeks</div>`).join('');
+  } else { banner.style.display='none'; }
+  // Also flag individual cards
+  const all=[...state.routineTasks,...state.projectTasks];
+  all.forEach(t=>{
+    const card=document.getElementById('task-card-'+t.id);
+    if (!card) return;
+    const isStale=stale.find(s=>s.title===t.title);
+    card.classList.toggle('stale-flag',!!isStale);
+    const icon=card.querySelector('.stale-icon');
+    if (icon) icon.style.display=isStale?'inline':'none';
+  });
+}
+
+// ═══ CARRY FORWARD ══════════════════════════════════════════
+function carryForwardTasks() {
+  const allReports=JSON.parse(localStorage.getItem('ee_reports')||'[]');
+  if (!allReports.length) return [];
+  const last=allReports[0];
+  const unfinished=[...(last.routineTasks||[]),...(last.projectTasks||[])].filter(t=>t.status!=='completed');
+  return unfinished.map(t=>({...t,id:Date.now()+Math.random(),_carried:true}));
+}
+
+// ═══ TASK MANAGEMENT ════════════════════════════════════════
+function makeTask(section) {
+  return {id:Date.now()+Math.random(),section,title:'',status:'ongoing',domain:'',body:'',link1label:'',link1url:'',link2label:'',link2url:'',bullets:''};
+}
+function addTask(section) {
+  const t=makeTask(section);
+  if (section==='routine') state.routineTasks.push(t);
+  else state.projectTasks.push(t);
+  renderForm(); renderPreview();
+  setTimeout(()=>{ const el=document.getElementById('task-body-'+t.id); if(el)el.classList.add('open'); },50);
+}
+function removeTask(id) {
+  state.routineTasks=state.routineTasks.filter(t=>String(t.id)!==String(id));
+  state.projectTasks=state.projectTasks.filter(t=>String(t.id)!==String(id));
+  renderForm(); renderPreview();
+}
+function updateTask(id,field,value) {
+  const all=[...state.routineTasks,...state.projectTasks];
+  const t=all.find(t=>String(t.id)===String(id));
+  if (t) t[field]=value;
+  if (field==='title') { const p=document.getElementById('prev-'+id); if(p)p.textContent=value||'Untitled task'; }
+  renderPreview();
+}
+function toggleTaskBody(id) { const el=document.getElementById('task-body-'+id); if(el)el.classList.toggle('open'); }
+
+// ═══ FORM RENDER ════════════════════════════════════════════
+function renderTaskCard(t,num) {
+  const statusBtns=STATUS_LIST.map(s=>`<span class="tag-opt ${s.cls}${t.status===s.key?' selected':''}" onclick="updateTask('${t.id}','status','${s.key}');renderFormPartial('${t.id}')">${s.label}</span>`).join('');
+  const domainBtns=DOMAIN_LIST.map(d=>`<span class="tag-opt ${d.cls}${t.domain===d.key?' selected':''}" onclick="updateTask('${t.id}','domain','${d.key}');renderFormPartial('${t.id}')">${d.label}</span>`).join('');
+  const carriedNote=t._carried?'<span style="font-size:9px;background:#d6e4ff;color:#0c2d6b;padding:1px 5px;border-radius:3px;margin-left:4px">↩ carried</span>':'';
+  return `<div class="task-card-form" id="task-card-${t.id}">
+    <div class="task-card-header" onclick="toggleTaskBody('${t.id}')">
+      <span class="task-num">${String(num).padStart(2,'0')}</span>
+      <span class="task-title-preview" id="prev-${t.id}">${t.title||'Untitled task'}</span>
+      ${carriedNote}
+      <span class="stale-icon" style="display:none">⚠️</span>
+      <span style="font-size:10px;color:var(--muted)">▾</span>
+    </div>
+    <div class="task-card-body" id="task-body-${t.id}">
+      <div class="field-group"><label>Task Title</label><input type="text" value="${esc(t.title)}" placeholder="Task title" oninput="updateTask('${t.id}','title',this.value)"></div>
+      <div class="field-group"><label>Status</label><div class="status-pick">${statusBtns}</div></div>
+      <div class="field-group"><label>Domain / Focus Area</label><div class="domain-pick">${domainBtns}</div></div>
+      <div class="field-group"><label>Description</label><textarea rows="2" oninput="updateTask('${t.id}','body',this.value)">${esc(t.body)}</textarea></div>
+      <div class="field-group"><label>Bullet Points (one per line)</label><textarea rows="2" oninput="updateTask('${t.id}','bullets',this.value)">${esc(t.bullets)}</textarea></div>
+      <div class="field-row">
+        <div class="field-group"><label>Link 1 Label</label><input type="text" value="${esc(t.link1label)}" oninput="updateTask('${t.id}','link1label',this.value)"></div>
+        <div class="field-group"><label>Link 1 URL</label><input type="text" value="${esc(t.link1url)}" oninput="updateTask('${t.id}','link1url',this.value)"></div>
+      </div>
+      <div class="field-row">
+        <div class="field-group"><label>Link 2 Label</label><input type="text" value="${esc(t.link2label)}" oninput="updateTask('${t.id}','link2label',this.value)"></div>
+        <div class="field-group"><label>Link 2 URL</label><input type="text" value="${esc(t.link2url)}" oninput="updateTask('${t.id}','link2url',this.value)"></div>
+      </div>
+      <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:6px">
+        <button class="btn btn-danger btn-sm" onclick="removeTask('${t.id}')">🗑 Remove</button>
+      </div>
+    </div>
+  </div>`;
+}
+function renderForm() {
+  const rl=document.getElementById('routine-list'), pl=document.getElementById('project-list');
+  rl.innerHTML=state.routineTasks.map((t,i)=>renderTaskCard(t,i+1)).join('');
+  pl.innerHTML=state.projectTasks.map((t,i)=>renderTaskCard(t,state.routineTasks.length+i+1)).join('');
+  setTimeout(renderStaleBanner,100);
+}
+function renderFormPartial(id) { renderForm(); renderPreview(); }
+
+function readFormFields() {
+  state.author=document.getElementById('f-author').value;
+  state.org=document.getElementById('f-org').value;
+  state.summary=document.getElementById('f-summary').value;
+  state.focus=document.getElementById('f-focus').value;
+  state.next=document.getElementById('f-next').value;
+  state.breakupUrl=document.getElementById('f-breakup-url').value;
+  state.archiveUrl=document.getElementById('f-archive-url').value;
+}
+function populateFormFields() {
+  document.getElementById('f-author').value=state.author||'';
+  document.getElementById('f-org').value=state.org||'';
+  document.getElementById('f-summary').value=state.summary||'';
+  document.getElementById('f-focus').value=state.focus||'';
+  document.getElementById('f-next').value=state.next||'';
+  document.getElementById('f-breakup-url').value=state.breakupUrl||'';
+  document.getElementById('f-archive-url').value=state.archiveUrl||'';
+}
+
+// ═══ PREVIEW ════════════════════════════════════════════════
+function fmtDate(d) {
+  if (!d) return '—';
+  const dt=parseDate(d);
+  return dt.toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+}
+function periodLabel() {
+  if (!state.start&&!state.end) return '—';
+  if (!state.end) return fmtDate(state.start);
+  return fmtDate(state.start)+' – '+fmtDate(state.end);
+}
+function statusBadge(key) {
+  const s=STATUS_LIST.find(x=>x.key===key)||STATUS_LIST[1];
+  const st=STATUS_STYLE[key]||STATUS_STYLE.ongoing;
+  return `<span class="rpt-status" style="background:${st.bg};color:${st.color}">${s.label}</span>`;
+}
+function domainBadge(key) {
+  if (!key) return '';
+  const d=DOMAIN_LIST.find(x=>x.key===key); if (!d) return '';
+  const st=DOMAIN_STYLE[key];
+  return `<span class="rpt-domain" style="background:${st.bg};color:${st.color}">${d.label}</span>`;
+}
+function renderTaskHTML(t,num) {
+  const bullets=t.bullets?t.bullets.split('\n').filter(b=>b.trim()).map(b=>`<div class="rpt-bullet">${esc(b.trim())}</div>`).join(''):'';
+  const link1=t.link1url?`<a class="rpt-link" href="${esc(t.link1url)}" target="_blank">🔗 ${esc(t.link1label||t.link1url)} [View →]</a>`:'';
+  const link2=t.link2url?`<a class="rpt-link" href="${esc(t.link2url)}" target="_blank">🔗 ${esc(t.link2label||t.link2url)} [View →]</a>`:'';
+  return `<div class="rpt-task">
+    <div class="rpt-task-title">
+      <span class="rpt-task-num">${String(num).padStart(2,'0')}</span>
+      <span class="rpt-task-name">${esc(t.title)||'<em style="color:#999">Untitled</em>'}</span>
+      ${statusBadge(t.status)}${domainBadge(t.domain)}
+    </div>
+    ${t.body?`<div class="rpt-body-text">${esc(t.body)}</div>`:''}
+    ${bullets}${link1}${link2}
+  </div>`;
+}
+function renderPreview() {
+  readFormFields();
+  const all=[...state.routineTasks,...state.projectTasks];
+  const total=all.length, done=all.filter(t=>t.status==='completed').length;
+  const ongoing=all.filter(t=>['ongoing','progress'].includes(t.status)).length;
+  const waiting=all.filter(t=>['awaiting','stalled'].includes(t.status)).length;
+  const routineHTML=state.routineTasks.map((t,i)=>renderTaskHTML(t,i+1)).join('');
+  const projectHTML=state.projectTasks.map((t,i)=>renderTaskHTML(t,state.routineTasks.length+i+1)).join('');
+  const nextItems=state.next?state.next.split('\n').filter(l=>l.trim()).map((l,i)=>
+    `<div class="rpt-next-item"><span class="rpt-next-num">${String(i+1).padStart(2,'0')}</span><span>${esc(l.trim())}</span></div>`).join('')
+    :'<div style="color:var(--muted);font-size:11px;padding:6px 0">No items added.</div>';
+  const today=new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+  document.getElementById('preview-root').innerHTML=`<div class="preview-page">
+    <div class="rpt-header">
+      <h1>Weekly Progress Report</h1>
+      <div class="org">${esc(state.org)}</div>
+      <div class="meta">
+        <div class="meta-item"><label>Reporting Period</label><span>${periodLabel()}</span></div>
+        <div class="meta-item"><label>Submitted By</label><span>${esc(state.author)}</span></div>
+      </div>
+    </div>
+    <div class="rpt-kpi">
+      <div class="kpi-cell"><div class="kpi-val">${total}</div><div class="kpi-label">Total Tasks</div></div>
+      <div class="kpi-cell"><div class="kpi-val">${done}</div><div class="kpi-label">Completed</div></div>
+      <div class="kpi-cell"><div class="kpi-val">${ongoing}</div><div class="kpi-label">Ongoing</div></div>
+      <div class="kpi-cell"><div class="kpi-val">${waiting}</div><div class="kpi-label">Awaiting/Stalled</div></div>
+    </div>
+    <div class="rpt-body">
+      ${state.routineTasks.length?`<div class="rpt-section-head">A · Routine Tasks (01–${String(state.routineTasks.length).padStart(2,'0')})</div>${routineHTML}`:''}
+      ${state.projectTasks.length?`<div class="rpt-section-head">B · Projects & Initiatives (${String(state.routineTasks.length+1).padStart(2,'0')}–${String(total).padStart(2,'0')})</div>${projectHTML}`:''}
+      ${state.summary||state.focus?`<div class="rpt-section-head">C · Overall Summary</div>
+        <div class="rpt-box">${state.summary?`<p>${esc(state.summary)}</p>`:''}${state.focus?`<p style="margin-top:6px"><strong>Focus:</strong> ${esc(state.focus)}</p>`:''}</div>`:''}
+      <div class="rpt-section-head">D · Next Week's Plan</div>
+      <div style="padding:6px 0">${nextItems}</div>
+      <div class="rpt-footer">
+        <div class="sig">Made with ❤ <strong>~rhc</strong> · EE Lab, KLE-CTIE · ${today}</div>
+        <div>${state.breakupUrl?`<a href="${esc(state.breakupUrl)}" target="_blank">Weekly Breakup →</a>`:''} ${state.archiveUrl?`&nbsp;|&nbsp;<a href="${esc(state.archiveUrl)}" target="_blank">Past Reports →</a>`:''}</div>
+      </div>
+    </div>
+  </div>`;
+  updatePeriodBadge();
+}
+
+// ═══ ANALYTICS ══════════════════════════════════════════════
+function renderAnalytics() {
+  const all=JSON.parse(localStorage.getItem('ee_reports')||'[]');
+  const root=document.getElementById('analytics-root');
+  if (!all.length) {
+    root.innerHTML='<div class="empty-state"><div class="icon">📊</div><p>Save at least one report to see analytics.</p></div>'; return;
+  }
+  const recent=all.slice(0,8).reverse();
+
+  // Week indicator
+  const cur=[...state.routineTasks,...state.projectTasks];
+  const score=cur.length+(cur.filter(t=>t.status!=='completed').length*0.5);
+  const wClass=score<5?'week-light':score<9?'week-medium':'week-heavy';
+  const wLabel=score<5?'Light Week':score<9?'Medium Week':'Heavy Week';
+
+  // Completion trend
+  const labels=recent.map(r=>r.start?fmtDate(r.start).split(' ').slice(0,2).join(' '):'?');
+  const rates=recent.map(r=>{ const t=[...(r.routineTasks||[]),...(r.projectTasks||[])]; return t.length?Math.round((t.filter(x=>x.status==='completed').length/t.length)*100):0; });
+  const taskCounts=recent.map(r=>(r.routineTasks||[]).length+(r.projectTasks||[]).length);
+
+  // Domain breakdown (current report)
+  const domainCount={};
+  cur.forEach(t=>{ if(t.domain){ domainCount[t.domain]=(domainCount[t.domain]||0)+1; } });
+  const domainEntries=Object.entries(domainCount).sort((a,b)=>b[1]-a[1]);
+
+  // Stale tasks across history
+  const staleSummary=detectStaleTasks();
+
+  root.innerHTML=`
+  <div class="week-indicator ${wClass}">
+    <div class="wi-label">This Week</div>
+    <div class="wi-val">${wLabel}</div>
+    <div style="font-size:11px">${cur.length} tasks · ${cur.filter(t=>t.status==='completed').length} completed</div>
+  </div>
+  <div class="analytics-grid">
+    <div class="analytics-card full">
+      <h4>Completion Rate % (last ${recent.length} weeks)</h4>
+      <canvas id="chart-trend" height="120"></canvas>
+    </div>
+    <div class="analytics-card">
+      <h4>Task Count per Week</h4>
+      <canvas id="chart-count" height="120"></canvas>
+    </div>
+    <div class="analytics-card">
+      <h4>Domain Mix (this report)</h4>
+      ${domainEntries.length?domainEntries.map(([k,v])=>{
+        const d=DOMAIN_LIST.find(x=>x.key===k), st=DOMAIN_STYLE[k];
+        return `<div class="stat-row"><span class="stat-label" style="color:${st.color}">${d?d.label:k}</span><span class="stat-val">${v}</span></div>`;
+      }).join(''):'<div style="font-size:11px;color:var(--muted);padding:8px 0">No domain tags set yet.</div>'}
+    </div>
+  </div>
+  ${staleSummary.length?`
+  <div class="analytics-card" style="margin-top:0">
+    <h4>⚠ Stale Tasks</h4>
+    <table class="stale-table"><thead><tr><th>Task</th><th>Status</th><th>Weeks</th></tr></thead><tbody>
+    ${staleSummary.map(s=>`<tr><td>${esc(s.title)}</td><td>${s.status}</td><td class="stale-weeks">${s.weeks}</td></tr>`).join('')}
+    </tbody></table>
+  </div>`:''}`;
+
+  // Draw trend chart
+  drawLineChart('chart-trend',labels,rates,'Completion %','#C8960C',0,100);
+  drawBarChart('chart-count',labels,taskCounts,'Tasks','#1a4499');
+}
+
+function drawLineChart(id,labels,data,label,color,ymin,ymax) {
+  const canvas=document.getElementById(id); if (!canvas) return;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.offsetWidth||400, H=120;
+  canvas.width=W; canvas.height=H;
+  const pad={l:32,r:12,t:10,b:28};
+  const cw=W-pad.l-pad.r, ch=H-pad.t-pad.b;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#f8f9fc'; ctx.fillRect(0,0,W,H);
+  const n=data.length; if (!n) return;
+  const xStep=cw/(n-1||1);
+  // grid
+  for (let i=0;i<=4;i++) {
+    const y=pad.t+ch*(1-i/4);
+    ctx.strokeStyle='#dde3ef'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(pad.l+cw,y); ctx.stroke();
+    ctx.fillStyle='#6b7280'; ctx.font='9px Inter'; ctx.textAlign='right';
+    ctx.fillText(Math.round(ymin+(ymax-ymin)*i/4),pad.l-4,y+3);
+  }
+  // line
+  ctx.strokeStyle=color; ctx.lineWidth=2; ctx.beginPath();
+  data.forEach((v,i)=>{ const x=pad.l+i*xStep, y=pad.t+ch*(1-(v-ymin)/(ymax-ymin||1)); i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); });
+  ctx.stroke();
+  // dots + labels
+  data.forEach((v,i)=>{
+    const x=pad.l+i*xStep, y=pad.t+ch*(1-(v-ymin)/(ymax-ymin||1));
+    ctx.fillStyle=color; ctx.beginPath(); ctx.arc(x,y,3.5,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#1a1f2e'; ctx.font='bold 9px Inter'; ctx.textAlign='center';
+    ctx.fillText(v+'%',x,y-6);
+    ctx.fillStyle='#6b7280'; ctx.font='9px Inter';
+    ctx.fillText(labels[i]||'',x,H-4);
+  });
+}
+function drawBarChart(id,labels,data,label,color) {
+  const canvas=document.getElementById(id); if (!canvas) return;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.offsetWidth||200, H=120;
+  canvas.width=W; canvas.height=H;
+  const pad={l:24,r:8,t:10,b:24};
+  const cw=W-pad.l-pad.r, ch=H-pad.t-pad.b;
+  ctx.clearRect(0,0,W,H);
+  ctx.fillStyle='#f8f9fc'; ctx.fillRect(0,0,W,H);
+  const n=data.length; if (!n) return;
+  const max=Math.max(...data,1);
+  const bw=Math.max(8,cw/n-4);
+  data.forEach((v,i)=>{
+    const x=pad.l+i*(cw/n)+(cw/n-bw)/2;
+    const bh=ch*(v/max);
+    const y=pad.t+ch-bh;
+    ctx.fillStyle=color; ctx.fillRect(x,y,bw,bh);
+    ctx.fillStyle='#1a1f2e'; ctx.font='bold 9px Inter'; ctx.textAlign='center';
+    ctx.fillText(v,x+bw/2,y-3);
+    ctx.fillStyle='#6b7280'; ctx.font='8px Inter';
+    ctx.fillText(labels[i]||'',x+bw/2,H-4);
+  });
+}
+
+// ═══ STORAGE ════════════════════════════════════════════════
+function saveReportToStorage() {
+  readFormFields();
+  const snap=JSON.parse(JSON.stringify(state));
+  snap.savedAt=new Date().toISOString();
+  const all=JSON.parse(localStorage.getItem('ee_reports')||'[]');
+  const idx=all.findIndex(r=>r.start===state.start);
+  if (idx>=0) all[idx]=snap; else all.unshift(snap);
+  localStorage.setItem('ee_reports',JSON.stringify(all.slice(0,30)));
+  toast('Saved ✓'); renderHistory();
+}
+function loadReport(snap) {
+  state=JSON.parse(JSON.stringify(snap));
+  populateFormFields(); renderForm(); renderPreview();
+  autoFillPeriod(); // re-check holidays for this period
+  state.start=snap.start||state.start; state.end=snap.end||state.end;
+  updatePeriodBadge();
+  switchTab('form'); toast('Report loaded ✓');
+}
+function renderHistory() {
+  const all=JSON.parse(localStorage.getItem('ee_reports')||'[]');
+  const el=document.getElementById('past-list-container');
+  if (!all.length) { el.innerHTML='<div class="empty-state"><div class="icon">📭</div><p>No saved reports yet.</p></div>'; return; }
+  el.innerHTML='<div class="past-list">'+all.map((r,i)=>`
+    <div class="past-item">
+      <div class="past-item-info">
+        <div class="past-item-period">${r.start?fmtDate(r.start)+' – '+fmtDate(r.end):'Undated'}</div>
+        <div class="past-item-meta">${(r.routineTasks||[]).length+(r.projectTasks||[]).length} tasks · ${new Date(r.savedAt).toLocaleDateString('en-IN')}</div>
+      </div>
+      <div class="past-item-actions">
+        <button class="btn btn-navy btn-sm" onclick="loadReportByIndex(${i})">Load</button>
+        <button class="btn btn-danger btn-sm" onclick="deleteReportByIndex(${i})">✕</button>
+      </div>
+    </div>`).join('')+'</div>';
+}
+function loadReportByIndex(i) { const all=JSON.parse(localStorage.getItem('ee_reports')||'[]'); if(all[i])loadReport(all[i]); }
+function deleteReportByIndex(i) {
+  const all=JSON.parse(localStorage.getItem('ee_reports')||'[]'); all.splice(i,1);
+  localStorage.setItem('ee_reports',JSON.stringify(all)); renderHistory(); toast('Deleted');
+}
+
+function newReport() {
+  const carried=carryForwardTasks();
+  const prevNext=(() => { const all=JSON.parse(localStorage.getItem('ee_reports')||'[]'); return all[0]?all[0].next||'':''; })();
+  state={...state,routineTasks:[],projectTasks:[...carried],summary:'',focus:'',next:prevNext};
+  autoFillPeriod();
+  populateFormFields(); renderForm(); renderPreview();
+  const banner=document.getElementById('carry-banner');
+  const items=document.getElementById('carry-items');
+  if (carried.length) {
+    banner.style.display='block';
+    items.innerHTML=carried.map(t=>`↩ ${t.title}`).join('<br>');
+  } else { banner.style.display='none'; }
+  switchTab('form'); toast(`New report created — ${carried.length} tasks carried forward`);
+}
+function newBlankReport() {
+  state={...state,routineTasks:[],projectTasks:[],summary:'',focus:'',next:''};
+  autoFillPeriod(); populateFormFields(); renderForm(); renderPreview();
+  document.getElementById('carry-banner').style.display='none';
+  switchTab('form'); toast('Blank report started');
+}
+
+// ═══ EXPORT ═════════════════════════════════════════════════
+function exportJSON() {
+  readFormFields();
+  const snap={...JSON.parse(JSON.stringify(state)),exportedAt:new Date().toISOString()};
+  const blob=new Blob([JSON.stringify(snap,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`EE_Report_${state.start||'draft'}.json`; a.click(); toast('JSON exported ✓');
+}
+function importJSON(e) {
+  const file=e.target.files[0]; if (!file) return;
+  const reader=new FileReader();
+  reader.onload=ev=>{ try { loadReport(JSON.parse(ev.target.result)); toast('Imported ✓'); } catch { toast('Invalid JSON'); } };
+  reader.readAsText(file); e.target.value='';
+}
+
+// ═══ PASTE PARSER ═══════════════════════════════════════════
+function parsePastedText() {
+  const raw=document.getElementById('paste-input').value.trim();
+  if (!raw) { toast('Paste some text first'); return; }
+  const lines=raw.split('\n'), tasks=[], bullets=[];
+  let current=null;
+  lines.forEach(line=>{
+    const trimmed=line.trim(); if (!trimmed) return;
+    const isBullet=/^[-•*–]\s+/.test(trimmed);
+    const isNumbered=/^\d+[.)]\s+/.test(trimmed);
+    if (!isBullet&&!isNumbered&&trimmed.length>3&&trimmed.length<120) {
+      if (current) { current.bullets=bullets.splice(0).join('\n'); tasks.push(current); }
+      current=makeTask('project'); current.title=trimmed.replace(/\*\*/g,'').replace(/^#+\s*/,'');
+    } else if (isBullet||isNumbered) {
+      const text=trimmed.replace(/^[-•*–]\s+/,'').replace(/^\d+[.)]\s+/,'');
+      if (current) { if (!current.body)current.body=text; else bullets.push(text); }
+    }
+  });
+  if (current) { current.bullets=bullets.join('\n'); tasks.push(current); }
+  if (!tasks.length) { toast('Could not parse tasks'); return; }
+  state.projectTasks=[...state.projectTasks,...tasks];
+  renderForm(); renderPreview(); document.getElementById('paste-input').value='';
+  switchTab('form'); toast(`Imported ${tasks.length} task${tasks.length>1?'s':''} ✓`);
+}
+
+// ═══ DOCX EXPORT ════════════════════════════════════════════
+async function exportDOCX() {
+  readFormFields();
+  const {Document,Packer,Paragraph,TextRun,Table,TableRow,TableCell,Header,Footer,
+    AlignmentType,ExternalHyperlink,BorderStyle,WidthType,ShadingType,VerticalAlign,
+    PageNumber,TabStopType,TabStopPosition}=docx;
+  const NAVY='0C2D6B',GOLD='C8960C',WHITE='FFFFFF',CW=9638;
+  const sp=()=>new Paragraph({children:[new TextRun('')],spacing:{before:0,after:80}});
+  const sh=(text)=>new Paragraph({children:[new TextRun({text:text.toUpperCase(),bold:true,size:18,color:WHITE,font:'Arial'})],shading:{type:ShadingType.CLEAR,fill:NAVY},spacing:{before:240,after:0},indent:{left:160,right:160}});
+  const all=[...state.routineTasks,...state.projectTasks];
+  const done=all.filter(t=>t.status==='completed').length;
+  const ongoing=all.filter(t=>['ongoing','progress'].includes(t.status)).length;
+  const waiting=all.filter(t=>['awaiting','stalled'].includes(t.status)).length;
+  const today=new Date().toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'});
+
+  const kpiCell=(label,value)=>new TableCell({
+    width:{size:Math.floor(CW/4),type:WidthType.DXA},
+    shading:{type:ShadingType.CLEAR,fill:'091f4d'},
+    borders:{top:{style:BorderStyle.NONE,size:0,color:WHITE},bottom:{style:BorderStyle.NONE,size:0,color:WHITE},left:{style:BorderStyle.NONE,size:0,color:WHITE},right:{style:BorderStyle.SINGLE,size:4,color:GOLD}},
+    margins:{top:90,bottom:90,left:110,right:110},
+    verticalAlign:VerticalAlign.CENTER,
+    children:[
+      new Paragraph({children:[new TextRun({text:String(value),bold:true,size:30,color:GOLD,font:'Arial'})],alignment:AlignmentType.CENTER}),
+      new Paragraph({children:[new TextRun({text:label,size:14,color:'8fabd4',font:'Arial'})],alignment:AlignmentType.CENTER}),
+    ],
+  });
+
+  const makeTaskParas=(t,num)=>{
+    const st=STATUS_STYLE[t.status]||STATUS_STYLE.ongoing;
+    const stLabel=(STATUS_LIST.find(s=>s.key===t.status)||STATUS_LIST[1]).label;
+    const dm=t.domain?(DOMAIN_LIST.find(d=>d.key===t.domain)):null;
+    const dmSt=t.domain?(DOMAIN_STYLE[t.domain]||null):null;
+    const paras=[new Paragraph({
+      children:[
+        new TextRun({text:`${String(num).padStart(2,'0')}  `,bold:true,size:20,color:GOLD,font:'Arial'}),
+        new TextRun({text:t.title||'Untitled',bold:true,size:20,color:NAVY,font:'Arial'}),
+        new TextRun({text:'   '}),
+        new TextRun({text:` ${stLabel} `,size:15,bold:true,color:st.color.replace('#',''),shading:{type:ShadingType.CLEAR,fill:st.bg.replace('#','')},font:'Arial'}),
+        ...(dm&&dmSt?[new TextRun({text:'  '}),new TextRun({text:` ${dm.label} `,size:14,bold:true,color:dmSt.color.replace('#',''),shading:{type:ShadingType.CLEAR,fill:dmSt.bg.replace('#','')},font:'Arial'})]:[]),
+      ],
+      spacing:{before:180,after:40},
+      border:{left:{style:BorderStyle.SINGLE,size:14,color:GOLD,space:4}},
+      indent:{left:140},
+    })];
+    if (t.body) paras.push(new Paragraph({children:[new TextRun({text:t.body,size:17,color:'333333',font:'Arial'})],spacing:{before:0,after:40},indent:{left:320}}));
+    if (t.bullets) t.bullets.split('\n').filter(b=>b.trim()).forEach(b=>{
+      paras.push(new Paragraph({children:[new TextRun({text:`– ${b.trim()}`,size:17,color:'555555',font:'Arial'})],spacing:{before:0,after:30},indent:{left:440}}));
+    });
+    if (t.link1url) paras.push(new Paragraph({children:[new TextRun({text:'🔗  ',size:16,font:'Arial'}),new ExternalHyperlink({link:t.link1url,children:[new TextRun({text:`${t.link1label||t.link1url}  [View →]`,color:GOLD,underline:{},size:16,font:'Arial'})]})],spacing:{before:20,after:30},indent:{left:320}}));
+    if (t.link2url) paras.push(new Paragraph({children:[new TextRun({text:'🔗  ',size:16,font:'Arial'}),new ExternalHyperlink({link:t.link2url,children:[new TextRun({text:`${t.link2label||t.link2url}  [View →]`,color:GOLD,underline:{},size:16,font:'Arial'})]})],spacing:{before:0,after:40},indent:{left:320}}));
+    return paras;
+  };
+
+  const bodyChildren=[];
+  if (state.routineTasks.length){bodyChildren.push(sh(`A  ·  Routine Tasks (01–${String(state.routineTasks.length).padStart(2,'0')})`));state.routineTasks.forEach((t,i)=>bodyChildren.push(...makeTaskParas(t,i+1)));}
+  if (state.projectTasks.length){bodyChildren.push(sh(`B  ·  Projects (${String(state.routineTasks.length+1).padStart(2,'0')}–${String(all.length).padStart(2,'0')})`));state.projectTasks.forEach((t,i)=>bodyChildren.push(...makeTaskParas(t,state.routineTasks.length+i+1)));}
+  if (state.summary||state.focus){
+    bodyChildren.push(sh('C  ·  Overall Summary'),sp());
+    const sumLines=[];
+    if (state.summary)sumLines.push(new Paragraph({children:[new TextRun({text:state.summary,size:17,color:'222222',font:'Arial'})],spacing:{before:50,after:50}}));
+    if (state.focus)sumLines.push(new Paragraph({children:[new TextRun({text:'Focus: ',bold:true,size:17,color:NAVY,font:'Arial'}),new TextRun({text:state.focus,size:17,color:'333333',font:'Arial'})],spacing:{before:40,after:50}}));
+    bodyChildren.push(new Table({width:{size:CW,type:WidthType.DXA},columnWidths:[CW],rows:[new TableRow({children:[new TableCell({width:{size:CW,type:WidthType.DXA},shading:{type:ShadingType.CLEAR,fill:'F4F6FA'},borders:{top:{style:BorderStyle.SINGLE,size:8,color:NAVY},bottom:{style:BorderStyle.SINGLE,size:4,color:NAVY},left:{style:BorderStyle.SINGLE,size:20,color:GOLD},right:{style:BorderStyle.NONE,size:0,color:WHITE}},margins:{top:100,bottom:100,left:160,right:160},children:sumLines})]})]}));
+  }
+  bodyChildren.push(sh('D  ·  Next Week\'s Plan'),sp());
+  (state.next?state.next.split('\n').filter(l=>l.trim()).map((l,i)=>new Paragraph({children:[new TextRun({text:`${String(i+1).padStart(2,'0')}.  `,size:17,color:GOLD,font:'Arial'}),new TextRun({text:l.trim(),size:17,color:'333333',font:'Arial'})],spacing:{before:50,after:40}})):[new Paragraph({children:[new TextRun({text:'(No items added)',size:17,color:'999999',font:'Arial'})],spacing:{before:50,after:40}})]).forEach(p=>bodyChildren.push(p));
+  bodyChildren.push(sp(),new Paragraph({children:[new TextRun({text:'~ End of Report ~',size:17,color:'888888',font:'Arial'})],alignment:AlignmentType.CENTER,spacing:{before:80}}));
+
+  const doc=new Document({sections:[{
+    properties:{page:{size:{width:11906,height:16838},margin:{top:1134,right:1134,bottom:1134,left:1134}}},
+    headers:{default:new Header({children:[new Paragraph({children:[new TextRun({text:'KLE-CTIE  ·  EE Lab Weekly Progress Report',bold:true,size:17,color:NAVY,font:'Arial'}),new TextRun({text:'\t'+periodLabel(),size:17,color:'666666',font:'Arial'})],tabStops:[{type:TabStopType.RIGHT,position:TabStopPosition.MAX}],border:{bottom:{style:BorderStyle.SINGLE,size:5,color:NAVY,space:1}},spacing:{after:50}})]})},
+    footers:{default:new Footer({children:[new Paragraph({children:[new TextRun({text:`Made with ❤  ~rhc  ·  EE Lab, KLE-CTIE  ·  ${today}`,size:15,color:'888888',font:'Arial'}),new TextRun({text:'\tPage ',size:15,color:'888888',font:'Arial'}),new TextRun({children:[PageNumber.CURRENT],size:15,color:'888888',font:'Arial'}),new TextRun({text:' of ',size:15,color:'888888',font:'Arial'}),new TextRun({children:[PageNumber.TOTAL_PAGES],size:15,color:'888888',font:'Arial'})],tabStops:[{type:TabStopType.RIGHT,position:TabStopPosition.MAX}],border:{top:{style:BorderStyle.SINGLE,size:5,color:NAVY,space:1}},spacing:{before:50}})]})},
+    children:[
+      new Paragraph({children:[new TextRun({text:'Weekly Progress Report',bold:true,size:44,color:WHITE,font:'Arial'})],shading:{type:ShadingType.CLEAR,fill:NAVY},indent:{left:160,right:160}}),
+      new Paragraph({children:[new TextRun({text:state.org,size:17,color:WHITE,font:'Arial'})],shading:{type:ShadingType.CLEAR,fill:NAVY},indent:{left:160,right:160}}),
+      new Paragraph({children:[new TextRun({text:'Reporting Period: ',bold:true,size:17,color:GOLD,font:'Arial'}),new TextRun({text:`${periodLabel()}     `,size:17,color:WHITE,font:'Arial'}),new TextRun({text:'Submitted By: ',bold:true,size:17,color:GOLD,font:'Arial'}),new TextRun({text:state.author,size:17,color:WHITE,font:'Arial'})],shading:{type:ShadingType.CLEAR,fill:NAVY},spacing:{before:50,after:160},indent:{left:160,right:160}}),
+      new Table({width:{size:CW,type:WidthType.DXA},columnWidths:[Math.floor(CW/4),Math.floor(CW/4),Math.floor(CW/4),CW-3*Math.floor(CW/4)],rows:[new TableRow({children:[kpiCell('Total Tasks',all.length),kpiCell('Completed',done),kpiCell('Ongoing',ongoing),kpiCell('Awaiting/Stalled',waiting)]})]}),
+      sp(),...bodyChildren,
+    ],
+  }]});
+  const buf=await Packer.toBuffer(doc);
+  const blob=new Blob([buf],{type:'application/vnd.openxmlformats-officedocument.wordprocessingml.document'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download=`EE_Lab_Report_${state.start||'draft'}.docx`; a.click(); toast('DOCX downloaded ✓');
+}
+
+// ═══ UTILS ══════════════════════════════════════════════════
+function esc(s){if(!s)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function switchTab(name){
+  const names=['form','paste','history','analytics','holidays'];
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',names[i]===name));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  if (name==='history') renderHistory();
+  if (name==='analytics') setTimeout(renderAnalytics,50);
+  if (name==='holidays') renderHolidayList();
+}
+function toast(msg){const el=document.getElementById('toast');el.textContent=msg;el.classList.add('show');setTimeout(()=>el.classList.remove('show'),2800)}
+
+// ═══ INIT ═══════════════════════════════════════════════════
+(function init(){
+  autoFillPeriod();
+  const all=JSON.parse(localStorage.getItem('ee_reports')||'[]');
+  if (all.length) {
+    loadReport(all[0]);
+  } else {
+    // Seed current report
+    state.routineTasks=[
+      {id:1,section:'routine',title:'EE Lab Utilization',status:'completed',domain:'docs',body:'Monthly EE Lab utilization report for June 2026 prepared and attached.',link1label:'EE Lab Utilization Report – Jun 2026',link1url:'https://drive.google.com/file/d/1okBI2JSRzCd66MElFrQmHIzLcUGjV9hJ/view?usp=drive_link',link2label:'EE Lab Utilization Dashboard',link2url:'https://rhchheda.github.io/EE-Lab-Utilization-Analytics/',bullets:''},
+      {id:2,section:'routine',title:'Startup & Equipment Coordination',status:'ongoing',domain:'startup',body:'Coordinated equipment pickup from EE Lab based on startup requests.',link1label:'',link1url:'',link2label:'',link2url:'',bullets:'Formal request required specifying items, purpose, and timeframe.\n2 items & accessories to be returned by 11-10-2026.'},
+      {id:3,section:'routine',title:'Delegate & Visitor Data Management',status:'ongoing',domain:'admin',body:'Continued management of delegate and visitor data. Updated to 12th June 2026.',link1label:'EEL Visitor Portal',link1url:'https://bgj1.short.gy/qpO494',link2label:'',link2url:'',bullets:''},
+    ];
+    state.projectTasks=[
+      {id:4,section:'project',title:'CShine – Tech Prowess Team (TPT)',status:'initiated',domain:'startup',body:'Designed TPT registration form, live funnel report, and PIN-protected admin panel across 5 problem statements.',link1label:'G-Form – TPT',link1url:'https://forms.gle/M8cuJocRXJeX4zsH8',link2label:'TPT Funnel Report',link2url:'https://rhchheda.github.io/TPT-Funnel-Report-Dev',bullets:''},
+      {id:5,section:'project',title:'Startup Quarterly Questionnaire Follow-up',status:'awaiting',domain:'auto',body:'Bulk email campaign completed across all 82 incubated startups.',link1label:'CTIE Startup Dashboard',link1url:'https://rhchheda.github.io/Startup-Quarterly-Progress-Dashboard/',link2label:'',link2url:'',bullets:'Initial: 82 · Follow-Up: 82 · Reminders: 164 · Thank-You: 55\nResponses: 58/82 as on 06-6-26.\nFull automation ready on 3 days notice.'},
+      {id:6,section:'project',title:'KLE-TU Research Facilities Portal',status:'stalled',domain:'infra',body:'Consolidated research facilities from all KLE-TU departments. Last updated 14 March 2026.',link1label:'KLE-TU Facilities Portal',link1url:'https://rhchheda.github.io/KLE-TU-Facilities-Portal/',link2label:'',link2url:'',bullets:''},
+      {id:7,section:'project',title:'CTIE Invoice Automation System',status:'awaiting',domain:'auto',body:'Deployed in-house invoice automation replacing manual billing for 34 startups.',link1label:'Invoice System Presentation',link1url:'https://rhchheda.github.io/CTIE-Invoice-System-Presentation/',link2label:'',link2url:'',bullets:'Demonstrated 2 months / 70 invoices. Awaiting approval.'},
+      {id:8,section:'project',title:'SIFS Details',status:'completed',domain:'admin',body:'Retrieved past records (Oct-2024) and shared the requested SIFS details.',link1label:'',link1url:'',link2label:'',link2url:'',bullets:''},
+      {id:9,section:'project',title:'TrueNAS SCALE – NAS for CTIE Office',status:'awaiting',domain:'infra',body:'Reinitiated stalled NAS storage works. Details shared. Awaiting inputs.',link1label:'',link1url:'',link2label:'',link2url:'',bullets:'CTIE Office not on KLE Campus LAN — IT Infocell to bridge.\nLast communication: 27 March 2026.'},
+      {id:10,section:'project',title:'KLE-CTIE Event Performance Dashboard',status:'completed',domain:'infra',body:'Integrated Event Reports Dashboard with Google Drive and GitHub Pages via GAS. Hundreds of records across FY 2015–16 to 2022–23.',link1label:'Event Performance Dashboard',link1url:'https://rhchheda.github.io/KLE-CTIE-Events/',link2label:'',link2url:'',bullets:'Custom GAS auto-gallery engine for event-specific image linking.'},
+      {id:11,section:'project',title:'KLE-CTIE EE Lab Inventory Portal',status:'progress',domain:'docs',body:'"Spark" animated avatar with Indian English neural voice narration. PO/Invoice integration in progress.',link1label:'EE Lab Inventory Portal',link1url:'https://rhchheda.github.io/KLE-CTIE-EE_Lab_Inventory/',link2label:'',link2url:'',bullets:'55+ instruments across 14 categories documented.\nPO/Invoice detail integration in progress.'},
+    ];
+    state.summary='Routine lab management continued alongside progress on digital infrastructure. Key achievements: Event Dashboard integrated; TrueNAS SCALE reinitiated; SIFS details shared; Inventory portal maintained with Spark audio guide.';
+    state.focus='Digital archival · Process automation · Startup support · Infrastructure reactivation · Inventory documentation';
+    state.next='Follow up on invoice automation approval\nCoordinate TrueNAS SCALE handover with IT Infocell\nUnblock Research Facilities Portal\nAdd PO/Invoice details to Inventory Portal';
+    state.breakupUrl='https://drive.google.com/file/d/10WJ_NRm5lyaNCxuEUIujxd-bf0v6H2O2/view?usp=drive_link';
+    state.archiveUrl='https://drive.google.com/drive/folders/1a4zHGDKYh0VhEv9Osktppn96Pubw4JXV?usp=sharing';
+    populateFormFields(); renderForm(); renderPreview();
+  }
+})();
+</script>
+</body>
+</html>
