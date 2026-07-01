@@ -1,0 +1,16 @@
+{
+  "months": [
+    {"month":"Oct-25","workingDays":23,"present":19,"absent":3,"leaves":1,"halfDays":0,"hoursWorked":73.133333,"requiredHrs":168,"excessHrs":-94.866667,"attendancePct":0.826087},
+    {"month":"Nov-25","workingDays":23,"present":22,"absent":0,"leaves":2,"halfDays":0,"hoursWorked":160.5,"requiredHrs":172,"excessHrs":-11.5,"attendancePct":0.956522},
+    {"month":"Dec-25","workingDays":26,"present":26,"absent":0,"leaves":0,"halfDays":0,"hoursWorked":190.633333,"requiredHrs":192,"excessHrs":-1.366667,"attendancePct":1},
+    {"month":"Jan-26","workingDays":25,"present":26,"absent":0,"leaves":0,"halfDays":0,"hoursWorked":185.35,"requiredHrs":180,"excessHrs":5.35,"attendancePct":1.04},
+    {"month":"Feb-26","workingDays":24,"present":24,"absent":0,"leaves":0,"halfDays":0,"hoursWorked":171.316667,"requiredHrs":176,"excessHrs":-4.683333,"attendancePct":1},
+    {"month":"Mar-26","workingDays":21,"present":22,"absent":0,"leaves":0,"halfDays":0,"hoursWorked":175.666667,"requiredHrs":160,"excessHrs":15.666667,"attendancePct":1.047619},
+    {"month":"Apr-26","workingDays":23,"present":23,"absent":0,"leaves":0,"halfDays":0,"hoursWorked":169.716667,"requiredHrs":168,"excessHrs":1.716667,"attendancePct":1},
+    {"month":"May-26","workingDays":24,"present":23,"absent":0,"leaves":1,"halfDays":0,"hoursWorked":165.866667,"requiredHrs":172,"excessHrs":-6.133333,"attendancePct":0.958333}
+  ],
+  "grand": {"month":"Grand Total","workingDays":189,"present":185,"absent":3,"leaves":4,"halfDays":0,"hoursWorked":1292.183333,"requiredHrs":1388,"excessHrs":-95.816667,"attendancePct":0.978836},
+  "inProgress": [],
+  "generatedAt": "2026-07-01T00:00:00.000Z",
+  "_note": "Placeholder mirroring the Attendance Google Sheet through May-26 (no Jun-26 tab yet). Overwritten automatically by the Sync Google Data GitHub Action once GDRIVE_SA_KEY is configured."
+}

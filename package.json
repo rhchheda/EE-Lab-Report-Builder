@@ -1,0 +1,12 @@
+{
+  "name": "ee-lab-report-builder",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "sync-drive-index": "node scripts/sync-drive-index.mjs",
+    "sync-attendance": "node scripts/sync-attendance.mjs"
+  },
+  "dependencies": {
+    "googleapis": "^144.0.0"
+  }
+}

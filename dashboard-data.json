@@ -1,0 +1,24 @@
+[
+  {
+    "start": "2026-06-22",
+    "end": "2026-06-27",
+    "routineTasks": [
+      {"id":1,"section":"routine","title":"EE Lab Utilization","status":"completed","domain":"docs","body":"Monthly EE Lab utilization report for June 2026 prepared and attached.","link1label":"EE Lab Utilization Report – Jun 2026","link1url":"https://drive.google.com/file/d/1okBI2JSRzCd66MElFrQmHIzLcUGjV9hJ/view?usp=drive_link","link2label":"EE Lab Utilization Dashboard","link2url":"https://rhchheda.github.io/EE-Lab-Utilization-Analytics/","bullets":""},
+      {"id":2,"section":"routine","title":"Startup & Equipment Coordination","status":"ongoing","domain":"startup","body":"Coordinated equipment pickup from EE Lab based on startup requests.","link1label":"","link1url":"","link2label":"","link2url":"","bullets":"Formal request required specifying items, purpose, and timeframe.\n2 items & accessories to be returned by 11-10-2026."},
+      {"id":3,"section":"routine","title":"Delegate & Visitor Data Management","status":"ongoing","domain":"admin","body":"Continued management of delegate and visitor data. Updated to 12th June 2026.","link1label":"EEL Visitor Portal","link1url":"https://bgj1.short.gy/qpO494","link2label":"","link2url":"","bullets":""}
+    ],
+    "projectTasks": [
+      {"id":4,"section":"project","title":"CShine – Tech Prowess Team (TPT)","status":"initiated","domain":"startup","body":"Designed TPT registration form, live funnel report, and PIN-protected admin panel across 5 problem statements.","link1label":"G-Form – TPT","link1url":"https://forms.gle/M8cuJocRXJeX4zsH8","link2label":"TPT Funnel Report","link2url":"https://rhchheda.github.io/TPT-Funnel-Report-Dev","bullets":""},
+      {"id":5,"section":"project","title":"Startup Quarterly Questionnaire Follow-up","status":"awaiting","domain":"auto","body":"Bulk email campaign completed across all 82 incubated startups.","link1label":"CTIE Startup Dashboard","link1url":"https://rhchheda.github.io/Startup-Quarterly-Progress-Dashboard/","link2label":"","link2url":"","bullets":"Initial: 82 · Follow-Up: 82 · Reminders: 164 · Thank-You: 55\nResponses: 58/82 as on 06-6-26.\nFull automation ready on 3 days notice."},
+      {"id":6,"section":"project","title":"KLE-TU Research Facilities Portal","status":"stalled","domain":"infra","body":"Consolidated research facilities from all KLE-TU departments. Last updated 14 March 2026.","link1label":"KLE-TU Facilities Portal","link1url":"https://rhchheda.github.io/KLE-TU-Facilities-Portal/","link2label":"","link2url":"","bullets":""},
+      {"id":7,"section":"project","title":"CTIE Invoice Automation System","status":"awaiting","domain":"auto","body":"Deployed in-house invoice automation replacing manual billing for 34 startups.","link1label":"Invoice System Presentation","link1url":"https://rhchheda.github.io/CTIE-Invoice-System-Presentation/","link2label":"","link2url":"","bullets":"Demonstrated 2 months / 70 invoices. Awaiting approval."},
+      {"id":8,"section":"project","title":"SIFS Details","status":"completed","domain":"admin","body":"Retrieved past records (Oct-2024) and shared the requested SIFS details.","link1label":"","link1url":"","link2label":"","link2url":"","bullets":""},
+      {"id":9,"section":"project","title":"TrueNAS SCALE – NAS for CTIE Office","status":"awaiting","domain":"infra","body":"Reinitiated stalled NAS storage works. Details shared. Awaiting inputs.","link1label":"","link1url":"","link2label":"","link2url":"","bullets":"CTIE Office not on KLE Campus LAN — IT Infocell to bridge.\nLast communication: 27 March 2026."},
+      {"id":10,"section":"project","title":"KLE-CTIE Event Performance Dashboard","status":"completed","domain":"infra","body":"Integrated Event Reports Dashboard with Google Drive and GitHub Pages via GAS. Hundreds of records across FY 2015–16 to 2022–23.","link1label":"Event Performance Dashboard","link1url":"https://rhchheda.github.io/KLE-CTIE-Events/","link2label":"","link2url":"","bullets":"Custom GAS auto-gallery engine for event-specific image linking."},
+      {"id":11,"section":"project","title":"KLE-CTIE EE Lab Inventory Portal","status":"progress","domain":"docs","body":"\"Spark\" animated avatar with Indian English neural voice narration. PO/Invoice integration in progress.","link1label":"EE Lab Inventory Portal","link1url":"https://rhchheda.github.io/KLE-CTIE-EE_Lab_Inventory/","link2label":"","link2url":"","bullets":"55+ instruments across 14 categories documented.\nPO/Invoice detail integration in progress."}
+    ],
+    "summary": "Routine lab management continued alongside progress on digital infrastructure. Key achievements: Event Dashboard integrated; TrueNAS SCALE reinitiated; SIFS details shared; Inventory portal maintained with Spark audio guide.",
+    "focus": "Digital archival · Process automation · Startup support · Infrastructure reactivation · Inventory documentation",
+    "savedAt": "2026-06-27T00:00:00.000Z"
+  }
+]

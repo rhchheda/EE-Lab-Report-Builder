@@ -6,6 +6,7 @@
 <title>EE Lab · Weekly Report Builder v2</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/docx/8.5.0/docx.umd.min.js"></script>
+<script src="auth.js"></script>
 <style>
 :root {
   --navy:#0C2D6B; --navy-light:#1a4499; --gold:#C8960C; --gold-light:#f0b830;
@@ -199,6 +200,7 @@ canvas{width:100%!important;display:block}
 </style>
 </head>
 <body>
+<script>eeGate('admin');</script>
 <div class="app">
 
 <!-- TOP BAR -->
@@ -214,6 +216,7 @@ canvas{width:100%!important;display:block}
   <div class="topbar-actions">
     <button class="btn btn-ghost btn-sm" onclick="saveReportToStorage()">💾 Save</button>
     <button class="btn btn-ghost btn-sm" onclick="exportJSON()">⬇ JSON</button>
+    <button class="btn btn-ghost btn-sm" onclick="syncDashboardData()">📊 Sync Dashboard</button>
     <button class="btn btn-navy btn-sm" onclick="exportDOCX()">📄 DOCX</button>
     <button class="btn btn-gold btn-sm" onclick="window.print()">🖨 PDF</button>
   </div>
@@ -951,6 +954,29 @@ function importJSON(e) {
   const reader=new FileReader();
   reader.onload=ev=>{ try { loadReport(JSON.parse(ev.target.result)); toast('Imported ✓'); } catch { toast('Invalid JSON'); } };
   reader.readAsText(file); e.target.value='';
+}
+
+// ═══ DASHBOARD SYNC ═════════════════════════════════════════
+async function syncDashboardData() {
+  readFormFields();
+  const entry={
+    start:state.start, end:state.end,
+    routineTasks:state.routineTasks, projectTasks:state.projectTasks,
+    summary:state.summary, focus:state.focus,
+    savedAt:new Date().toISOString(),
+  };
+  let all=[];
+  try {
+    const res=await fetch('dashboard-data.json',{cache:'no-store'});
+    if (res.ok) all=await res.json();
+  } catch(e) { /* no existing file yet — starting fresh */ }
+  const idx=all.findIndex(r=>r.start===entry.start);
+  if (idx>=0) all[idx]=entry; else all.push(entry);
+  all.sort((a,b)=>(a.start||'').localeCompare(b.start||''));
+  const blob=new Blob([JSON.stringify(all,null,2)],{type:'application/json'});
+  const a=document.createElement('a'); a.href=URL.createObjectURL(blob);
+  a.download='dashboard-data.json'; a.click();
+  toast('Dashboard data synced ✓ — commit the downloaded file to the repo');
 }
 
 // ═══ PASTE PARSER ═══════════════════════════════════════════

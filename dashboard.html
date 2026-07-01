@@ -1,0 +1,421 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>EE Lab · Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<script src="auth.js"></script>
+<style>
+:root {
+  --navy:#0C2D6B; --navy-light:#1a4499; --gold:#C8960C; --gold-light:#f0b830;
+  --bg:#F0F3F9; --surface:#fff; --panel:#f8f9fc; --border:#dde3ef;
+  --text:#1a1f2e; --muted:#6b7280;
+  --success:#1a5e2a; --success-bg:#d4edda;
+  --warn:#7b4500; --warn-bg:#fff3cd;
+  --info:#0c2d6b; --info-bg:#d6e4ff;
+  --danger:#8b0000; --danger-bg:#fde8e8;
+  --purple:#5c005c; --purple-bg:#f3e8ff;
+  --radius:10px; --shadow:0 1px 4px rgba(12,45,107,.08); --shadow-md:0 4px 16px rgba(12,45,107,.12);
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.topbar{background:var(--navy);display:flex;align-items:center;justify-content:space-between;padding:0 22px;height:56px;border-bottom:2px solid var(--gold);position:sticky;top:0;z-index:50}
+.topbar-brand{display:flex;align-items:center;gap:10px}
+.topbar-brand .dot{width:8px;height:8px;border-radius:50%;background:var(--gold)}
+.topbar-brand span{color:#fff;font-weight:600;font-size:14px}
+.topbar-brand small{color:#8fabd4;font-size:11px;margin-left:4px}
+.topbar-actions{display:flex;gap:7px;align-items:center}
+.btn{display:inline-flex;align-items:center;gap:5px;padding:7px 13px;border-radius:6px;font-size:12px;font-weight:500;cursor:pointer;border:none;transition:all .15s;text-decoration:none;white-space:nowrap}
+.btn-ghost{background:rgba(255,255,255,.08);color:#c8d8f0}.btn-ghost:hover{background:rgba(255,255,255,.16);color:#fff}
+.btn-gold{background:var(--gold);color:var(--navy);font-weight:700}.btn-gold:hover{background:var(--gold-light)}
+.btn-sm{padding:5px 10px;font-size:11px}
+
+.tabs{display:flex;gap:2px;background:var(--surface);border-bottom:1px solid var(--border);padding:0 22px;overflow-x:auto;position:sticky;top:56px;z-index:40}
+.tab{padding:12px 16px;font-size:12px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:2px solid transparent;white-space:nowrap;user-select:none}
+.tab.active{color:var(--navy);border-bottom-color:var(--gold)}
+.tab-content{display:none;max-width:1180px;margin:0 auto;padding:22px}
+.tab-content.active{display:block}
+
+.kpi-row{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:18px}
+.kpi-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center;box-shadow:var(--shadow)}
+.kpi-card .v{font-size:26px;font-weight:700;color:var(--navy);font-family:'JetBrains Mono',monospace}
+.kpi-card .l{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;margin-top:4px}
+.kpi-card.warn .v{color:var(--warn)}
+.kpi-card.danger .v{color:var(--danger)}
+.kpi-card.success .v{color:var(--success)}
+
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px;margin-bottom:16px;box-shadow:var(--shadow)}
+.card h3{font-size:13px;font-weight:700;color:var(--navy);text-transform:uppercase;letter-spacing:.6px;margin-bottom:14px;display:flex;align-items:center;justify-content:space-between}
+.card h3 small{font-size:10px;color:var(--muted);text-transform:none;font-weight:500;letter-spacing:0}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+canvas{width:100%!important;display:block}
+
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;padding:8px 10px;background:var(--panel);color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.5px;font-weight:700}
+td{padding:8px 10px;border-bottom:1px solid var(--border)}
+tr:last-child td{border-bottom:none}
+.badge{padding:3px 9px;border-radius:12px;font-size:10px;font-weight:700;white-space:nowrap;display:inline-block}
+.badge-ontrack{background:var(--success-bg);color:var(--success)}
+.badge-watch{background:var(--warn-bg);color:var(--warn)}
+.badge-deviation{background:var(--danger-bg);color:var(--danger)}
+.badge-neutral{background:var(--info-bg);color:var(--info)}
+.badge-uploaded{background:var(--success-bg);color:var(--success)}
+.badge-missing{background:var(--danger-bg);color:var(--danger)}
+
+.empty{text-align:center;padding:36px 16px;color:var(--muted)}
+.empty .icon{font-size:30px;margin-bottom:8px}
+.banner{border-radius:8px;padding:12px 14px;margin-bottom:16px;font-size:12px;line-height:1.5}
+.banner-info{background:var(--info-bg);color:var(--info);border-left:4px solid var(--navy)}
+.banner-warn{background:var(--warn-bg);color:var(--warn);border-left:4px solid #e6a000}
+.loading{text-align:center;padding:40px;color:var(--muted);font-size:13px}
+a.link{color:var(--gold);font-weight:600;text-decoration:none;font-size:11px}
+a.link:hover{text-decoration:underline}
+
+#ee-gate-overlay ~ * { }
+</style>
+</head>
+<body>
+<script>eeGate('viewer');</script>
+
+<div class="topbar">
+  <div class="topbar-brand">
+    <div class="dot"></div>
+    <span>EE Lab · Dashboard <small>KLE-CTIE</small></span>
+  </div>
+  <div class="topbar-actions">
+    <button class="btn btn-ghost btn-sm" onclick="loadAll()">↻ Refresh Data</button>
+    <a class="btn btn-gold btn-sm" href="index.html">✏️ Report Builder</a>
+  </div>
+</div>
+
+<div class="tabs">
+  <div class="tab active" onclick="switchTab('overview')">📊 Overview</div>
+  <div class="tab" onclick="switchTab('deviations')">⚠ KRA Deviations</div>
+  <div class="tab" onclick="switchTab('attendance')">📆 Attendance</div>
+  <div class="tab" onclick="switchTab('reports')">🗂 Weekly Reports</div>
+  <div class="tab" onclick="switchTab('trends')">📈 Trends</div>
+</div>
+
+<div id="tab-overview" class="tab-content active"><div id="overview-root" class="loading">Loading…</div></div>
+<div id="tab-deviations" class="tab-content"><div id="deviations-root" class="loading">Loading…</div></div>
+<div id="tab-attendance" class="tab-content"><div id="attendance-root" class="loading">Loading…</div></div>
+<div id="tab-reports" class="tab-content"><div id="reports-root" class="loading">Loading…</div></div>
+<div id="tab-trends" class="tab-content"><div id="trends-root" class="loading">Loading…</div></div>
+
+<script>
+// ═══ KRA MASTER LIST (from Work Breakup-05-03-2026.jpg — Rakesh's Communication KRAs) ═══
+const KRA_LIST = [
+  {key:'comm-auto', label:'Startup Communication & Automation', keywords:['communication','automat','startup comm']},
+  {key:'ctie-data', label:'CTIE Data Collection & Ekalakshya DipStick Coordination', keywords:['ekalakshya','dipstick','data collection','ctie related data']},
+  {key:'incubation', label:'New Startup Incubation (Initial → Selection)', keywords:['incubat','selection process','new startup','onboard']},
+  {key:'rf-lab', label:'RF Lab Management', keywords:['rf lab','rf-lab','radio frequency']},
+  {key:'facilities', label:'Labs & University Facilities Sharing', keywords:['facilit','lab utilization','equipment','coordination']},
+  {key:'meetings', label:'Meetings, MoM & University Collaboration', keywords:['mom','meeting','collaboration','faculty']},
+  {key:'proj-status', label:'Project Status Reports (University Collaboration)', keywords:['project status','status report']},
+  {key:'cohorts', label:'Structured Cohorts & Workshops', keywords:['cohort','workshop','training']},
+];
+
+let reportWeeks = [];   // dashboard-data.json
+let driveIndex = [];    // drive-index.json
+let attendanceData = null;
+
+function esc(s){if(!s)return '';return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function parseDate(s){ const [y,m,d]=s.split('-').map(Number); return new Date(y,m-1,d); }
+function fmtDate(d){ if(!d) return '—'; return parseDate(d).toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}); }
+function weekLabel(w){ return w.start ? fmtDate(w.start)+' – '+fmtDate(w.end) : 'Undated'; }
+function num(v){ return (v===null||v===undefined||v==='')?0:Number(v)||0; }
+
+function switchTab(name){
+  const names=['overview','deviations','attendance','reports','trends'];
+  document.querySelectorAll('.tab').forEach((t,i)=>t.classList.toggle('active',names[i]===name));
+  document.querySelectorAll('.tab-content').forEach(c=>c.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+}
+
+// ═══ DATA LOADING ═══════════════════════════════════════════
+async function loadAll(){
+  ['overview','deviations','reports','trends'].forEach(t=>document.getElementById(t+'-root').innerHTML='<div class="loading">Loading…</div>');
+  document.getElementById('attendance-root').innerHTML='<div class="loading">Loading…</div>';
+
+  try {
+    const res = await fetch('dashboard-data.json',{cache:'no-store'});
+    reportWeeks = res.ok ? await res.json() : [];
+  } catch(e) { reportWeeks = []; }
+  reportWeeks.sort((a,b)=>(a.start||'').localeCompare(b.start||''));
+
+  try {
+    const res = await fetch('drive-index.json',{cache:'no-store'});
+    driveIndex = res.ok ? await res.json() : [];
+  } catch(e) { driveIndex = []; }
+
+  await loadAttendance();
+
+  renderOverview();
+  renderDeviations();
+  renderAttendance();
+  renderReports();
+  renderTrends();
+}
+
+async function loadAttendance(){
+  // Backend: Attendance Google Sheet (source of truth), synced server-side via the
+  // "Sync Google Data" GitHub Action into this static JSON — no client-side credentials.
+  attendanceData = {months:[], grand:null, inProgress:[], error:null};
+  try {
+    const res = await fetch('attendance-data.json',{cache:'no-store'});
+    if (!res.ok) throw new Error('not found');
+    const data = await res.json();
+    attendanceData.months = data.months || [];
+    attendanceData.grand = data.grand || null;
+    attendanceData.inProgress = data.inProgress || [];
+  } catch(e) { attendanceData.error = 'Could not load attendance-data.json — has the Sync Google Data workflow run yet?'; }
+}
+
+// ═══ OVERVIEW ═══════════════════════════════════════════════
+function renderOverview(){
+  const root=document.getElementById('overview-root');
+  if (!reportWeeks.length){
+    root.innerHTML='<div class="empty"><div class="icon">📭</div><p>No weekly report data yet.</p><p style="font-size:11px;margin-top:6px">Use <strong>Sync Dashboard</strong> in the Report Builder, then commit <code>dashboard-data.json</code>.</p></div>';
+    return;
+  }
+  const latest = reportWeeks[reportWeeks.length-1];
+  const allTasks = [...(latest.routineTasks||[]),...(latest.projectTasks||[])];
+  const completionPct = allTasks.length ? Math.round(allTasks.filter(t=>t.status==='completed').length/allTasks.length*100) : 0;
+  const dev = computeDeviations();
+  const deviationCount = dev.filter(d=>d.status==='deviation').length;
+  const grand = attendanceData && attendanceData.grand;
+  const attPct = grand ? Math.round(grand.attendancePct*100) : null;
+
+  root.innerHTML = `
+  <div class="kpi-row">
+    <div class="kpi-card"><div class="v">${reportWeeks.length}</div><div class="l">Weeks Tracked</div></div>
+    <div class="kpi-card ${completionPct>=70?'success':completionPct>=40?'warn':'danger'}"><div class="v">${completionPct}%</div><div class="l">Latest Week Completion</div></div>
+    <div class="kpi-card ${deviationCount?'danger':'success'}"><div class="v">${deviationCount}</div><div class="l">KRA Deviations</div></div>
+    <div class="kpi-card ${attPct===null?'':attPct>=90?'success':attPct>=75?'warn':'danger'}"><div class="v">${attPct===null?'—':attPct+'%'}</div><div class="l">Attendance (FY to date)</div></div>
+  </div>
+  <div class="card">
+    <h3>Latest Week <small>${weekLabel(latest)}</small></h3>
+    ${latest.summary?`<p style="font-size:12px;color:#333;line-height:1.6">${esc(latest.summary)}</p>`:'<p style="font-size:11px;color:var(--muted)">No summary recorded.</p>'}
+    ${latest.focus?`<p style="font-size:11px;color:var(--muted);margin-top:8px"><strong style="color:var(--navy)">Focus:</strong> ${esc(latest.focus)}</p>`:''}
+  </div>
+  ${deviationCount?`<div class="banner banner-warn">⚠ <strong>${deviationCount}</strong> KRA item${deviationCount>1?'s':''} showing no reported activity for 3+ weeks — see the KRA Deviations tab.</div>`:''}
+  `;
+}
+
+// ═══ DEVIATION ENGINE ═══════════════════════════════════════
+function taskText(t){ return [t.title,t.body,t.bullets].filter(Boolean).join(' ').toLowerCase(); }
+
+function computeDeviations(){
+  const weeksDesc = [...reportWeeks].reverse(); // most recent first
+  return KRA_LIST.map(kra=>{
+    let weeksSinceSeen = null;
+    for (let i=0;i<weeksDesc.length;i++){
+      const w=weeksDesc[i];
+      const all=[...(w.routineTasks||[]),...(w.projectTasks||[])];
+      const hit = all.some(t=>kra.keywords.some(k=>taskText(t).includes(k)));
+      if (hit){ weeksSinceSeen=i; break; }
+    }
+    let status, lastSeenWeek=null;
+    if (weeksSinceSeen===null) status = reportWeeks.length ? 'deviation' : 'neutral';
+    else { lastSeenWeek = weeksDesc[weeksSinceSeen]; status = weeksSinceSeen===0?'on-track':weeksSinceSeen<=2?'watch':'deviation'; }
+    return {...kra, weeksSinceSeen, lastSeenWeek, status};
+  });
+}
+
+function statusBadge(status){
+  const map={'on-track':['badge-ontrack','On Track'],'watch':['badge-watch','Watch'],'deviation':['badge-deviation','Deviation'],'neutral':['badge-neutral','No Data']};
+  const [cls,label]=map[status]||map.neutral;
+  return `<span class="badge ${cls}">${label}</span>`;
+}
+
+function renderDeviations(){
+  const root=document.getElementById('deviations-root');
+  const dev = computeDeviations();
+  const lowHistory = reportWeeks.length < 3;
+  root.innerHTML = `
+  ${lowHistory?`<div class="banner banner-info">ℹ Only ${reportWeeks.length} week${reportWeeks.length===1?'':'s'} of data synced so far — deviation flags become more reliable as more weeks are added via <strong>Sync Dashboard</strong> in the Report Builder.</div>`:''}
+  <div class="card">
+    <h3>KRA Coverage <small>from Work Breakup-05-03-2026.jpg</small></h3>
+    <table>
+      <thead><tr><th>KRA Item</th><th>Last Seen</th><th>Weeks Silent</th><th>Status</th></tr></thead>
+      <tbody>
+        ${dev.map(d=>`<tr>
+          <td>${esc(d.label)}</td>
+          <td>${d.lastSeenWeek?weekLabel(d.lastSeenWeek):'<span style="color:var(--muted)">never</span>'}</td>
+          <td>${d.weeksSinceSeen===null?'—':d.weeksSinceSeen}</td>
+          <td>${statusBadge(d.status)}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`;
+}
+
+// ═══ ATTENDANCE ═════════════════════════════════════════════
+function renderAttendance(){
+  const root=document.getElementById('attendance-root');
+  if (!attendanceData || (!attendanceData.months.length && !attendanceData.inProgress.length)){
+    root.innerHTML=`<div class="empty"><div class="icon">📆</div><p>${attendanceData&&attendanceData.error?esc(attendanceData.error):'No attendance data found.'}</p></div>`;
+    return;
+  }
+  const months=[...attendanceData.months];
+  const grand=attendanceData.grand;
+  const inProgress=attendanceData.inProgress||[];
+  const rangeLabel = months.length ? `${months[0].month} → ${(inProgress[inProgress.length-1]||months[months.length-1]).month}` : '';
+
+  root.innerHTML = `
+  <div class="kpi-row">
+    <div class="kpi-card"><div class="v">${grand?grand.workingDays:'—'}</div><div class="l">Working Days (completed months)</div></div>
+    <div class="kpi-card success"><div class="v">${grand?grand.present:'—'}</div><div class="l">Present</div></div>
+    <div class="kpi-card ${grand&&grand.absent?'danger':''}"><div class="v">${grand?grand.absent:'—'}</div><div class="l">Absent</div></div>
+    <div class="kpi-card ${grand&&grand.attendancePct>=0.9?'success':'warn'}"><div class="v">${grand?Math.round(grand.attendancePct*100)+'%':'—'}</div><div class="l">Attendance %</div></div>
+  </div>
+  <div class="card">
+    <h3>Monthly Attendance % <small>${esc(rangeLabel)}</small></h3>
+    <canvas id="chart-att-trend" height="140"></canvas>
+  </div>
+  <div class="card">
+    <h3>Monthly Detail</h3>
+    <table>
+      <thead><tr><th>Month</th><th>Working Days</th><th>Present</th><th>Absent</th><th>Leaves</th><th>Hrs Worked</th><th>Required Hrs</th><th>Attendance %</th></tr></thead>
+      <tbody>
+        ${months.map(m=>`<tr><td>${m.month}</td><td>${m.workingDays}</td><td>${m.present}</td><td>${m.absent}</td><td>${m.leaves}</td><td>${m.hoursWorked.toFixed(1)}</td><td>${m.requiredHrs}</td><td>${Math.round(m.attendancePct*100)}%</td></tr>`).join('')}
+        ${inProgress.map(p=>`<tr style="background:var(--panel)"><td>${esc(p.month)} <span class="badge badge-watch" style="margin-left:4px">in progress</span></td><td>${p.workingDays}</td><td>${p.present}</td><td>${p.absent}</td><td>${p.leaves}</td><td>${p.hoursWorked.toFixed(1)}</td><td>—</td><td>${p.recorded?Math.round(p.attendancePct*100)+'%':'—'} <small style="color:var(--muted)">(${p.recorded}/${p.workingDays} recorded)</small></td></tr>`).join('')}
+        ${grand?`<tr style="font-weight:700;background:var(--panel)"><td>Grand Total</td><td>${grand.workingDays}</td><td>${grand.present}</td><td>${grand.absent}</td><td>${grand.leaves}</td><td>${grand.hoursWorked.toFixed(1)}</td><td>${grand.requiredHrs}</td><td>${Math.round(grand.attendancePct*100)}%</td></tr>`:''}
+      </tbody>
+    </table>
+  </div>`;
+
+  const labels = months.map(m=>m.month).concat(inProgress.map(p=>p.month+'*'));
+  const rates = months.map(m=>Math.round(m.attendancePct*100)).concat(inProgress.map(p=>p.recorded?Math.round(p.attendancePct*100):0));
+  drawLineChart('chart-att-trend',labels,rates,'Attendance %','#C8960C',0,100);
+}
+
+// ═══ WEEKLY REPORTS (Drive linking) ═══════════════════════
+function driveMatchFor(week){
+  if (!driveIndex.length) return null;
+  const start=parseDate(week.start), end=parseDate(week.end);
+  return driveIndex.find(f=>{
+    const m = String(f.name||'').match(/(\d{1,2})[\s\-–](\d{1,2})[\s\-–]([A-Za-z]{3,})/);
+    if (!m) return false;
+    const day2=Number(m[2]), monStr=m[3].slice(0,3);
+    const endMon = end.toLocaleDateString('en-US',{month:'short'});
+    return day2===end.getDate() && monStr.toLowerCase()===endMon.toLowerCase();
+  }) || null;
+}
+
+function renderReports(){
+  const root=document.getElementById('reports-root');
+  if (!reportWeeks.length){
+    root.innerHTML='<div class="empty"><div class="icon">🗂</div><p>No weekly reports synced yet.</p></div>';
+    return;
+  }
+  const rows=[...reportWeeks].reverse().map(w=>{
+    const all=[...(w.routineTasks||[]),...(w.projectTasks||[])];
+    const pct = all.length ? Math.round(all.filter(t=>t.status==='completed').length/all.length*100) : 0;
+    const match = driveMatchFor(w);
+    return {w,pct,match};
+  });
+  root.innerHTML = `
+  ${!driveIndex.length?'<div class="banner banner-info">ℹ Drive index not available yet — run the sync-drive-index workflow (or wait for its schedule) to enable live "View in Drive" links.</div>':''}
+  <div class="card">
+    <h3>Weekly Reports</h3>
+    <table>
+      <thead><tr><th>Period</th><th>Tasks</th><th>Completion</th><th>Drive Report</th></tr></thead>
+      <tbody>
+        ${rows.map(r=>`<tr>
+          <td>${weekLabel(r.w)}</td>
+          <td>${(r.w.routineTasks||[]).length+(r.w.projectTasks||[]).length}</td>
+          <td>${r.pct}%</td>
+          <td>${r.match?`<a class="link" href="${esc(r.match.webViewLink)}" target="_blank">View in Drive →</a>`:'<span class="badge badge-missing">not matched</span>'}</td>
+        </tr>`).join('')}
+      </tbody>
+    </table>
+  </div>`;
+}
+
+// ═══ TRENDS ═════════════════════════════════════════════════
+function renderTrends(){
+  const root=document.getElementById('trends-root');
+  if (!reportWeeks.length){
+    root.innerHTML='<div class="empty"><div class="icon">📈</div><p>No data to chart yet.</p></div>';
+    return;
+  }
+  const recent = reportWeeks.slice(-10);
+  const labels = recent.map(w=>w.start?fmtDate(w.start).split(' ').slice(0,2).join(' '):'?');
+  const rates = recent.map(w=>{ const t=[...(w.routineTasks||[]),...(w.projectTasks||[])]; return t.length?Math.round(t.filter(x=>x.status==='completed').length/t.length*100):0; });
+  const counts = recent.map(w=>(w.routineTasks||[]).length+(w.projectTasks||[]).length);
+
+  const domainCount={};
+  const latest = reportWeeks[reportWeeks.length-1];
+  [...(latest.routineTasks||[]),...(latest.projectTasks||[])].forEach(t=>{ if(t.domain) domainCount[t.domain]=(domainCount[t.domain]||0)+1; });
+
+  root.innerHTML = `
+  <div class="grid2">
+    <div class="card"><h3>Completion Rate % <small>last ${recent.length} weeks</small></h3><canvas id="chart-trend" height="130"></canvas></div>
+    <div class="card"><h3>Task Count per Week</h3><canvas id="chart-count" height="130"></canvas></div>
+  </div>
+  <div class="card">
+    <h3>Domain Mix <small>latest week</small></h3>
+    ${Object.keys(domainCount).length?Object.entries(domainCount).sort((a,b)=>b[1]-a[1]).map(([k,v])=>`<div style="display:flex;justify-content:space-between;padding:5px 0;border-bottom:1px solid var(--border);font-size:12px"><span>${esc(k)}</span><strong style="font-family:'JetBrains Mono',monospace;color:var(--navy)">${v}</strong></div>`).join(''):'<p style="font-size:11px;color:var(--muted)">No domain tags set on latest week.</p>'}
+  </div>`;
+  drawLineChart('chart-trend',labels,rates,'Completion %','#C8960C',0,100);
+  drawBarChart('chart-count',labels,counts,'Tasks','#1a4499');
+}
+
+// ═══ CANVAS CHARTS (ported from index.html) ═══════════════
+function drawLineChart(id,labels,data,label,color,ymin,ymax){
+  const canvas=document.getElementById(id); if(!canvas) return;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.offsetWidth||400,H=canvas.height||130;
+  canvas.width=W; canvas.height=H;
+  const pad={l:34,r:12,t:12,b:28};
+  const cw=W-pad.l-pad.r, ch=H-pad.t-pad.b;
+  ctx.clearRect(0,0,W,H); ctx.fillStyle='#f8f9fc'; ctx.fillRect(0,0,W,H);
+  const n=data.length; if(!n) return;
+  const xStep=cw/(n-1||1);
+  for (let i=0;i<=4;i++){
+    const y=pad.t+ch*(1-i/4);
+    ctx.strokeStyle='#dde3ef'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(pad.l,y); ctx.lineTo(pad.l+cw,y); ctx.stroke();
+    ctx.fillStyle='#6b7280'; ctx.font='9px Inter'; ctx.textAlign='right';
+    ctx.fillText(Math.round(ymin+(ymax-ymin)*i/4),pad.l-4,y+3);
+  }
+  ctx.strokeStyle=color; ctx.lineWidth=2; ctx.beginPath();
+  data.forEach((v,i)=>{ const x=pad.l+i*xStep,y=pad.t+ch*(1-(v-ymin)/(ymax-ymin||1)); i===0?ctx.moveTo(x,y):ctx.lineTo(x,y); });
+  ctx.stroke();
+  data.forEach((v,i)=>{
+    const x=pad.l+i*xStep,y=pad.t+ch*(1-(v-ymin)/(ymax-ymin||1));
+    ctx.fillStyle=color; ctx.beginPath(); ctx.arc(x,y,3.5,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle='#1a1f2e'; ctx.font='bold 9px Inter'; ctx.textAlign='center';
+    ctx.fillText(v+'%',x,y-6);
+    ctx.fillStyle='#6b7280'; ctx.font='9px Inter';
+    ctx.fillText(labels[i]||'',x,H-4);
+  });
+}
+function drawBarChart(id,labels,data,label,color){
+  const canvas=document.getElementById(id); if(!canvas) return;
+  const ctx=canvas.getContext('2d');
+  const W=canvas.offsetWidth||400,H=canvas.height||130;
+  canvas.width=W; canvas.height=H;
+  const pad={l:26,r:8,t:12,b:24};
+  const cw=W-pad.l-pad.r, ch=H-pad.t-pad.b;
+  ctx.clearRect(0,0,W,H); ctx.fillStyle='#f8f9fc'; ctx.fillRect(0,0,W,H);
+  const n=data.length; if(!n) return;
+  const max=Math.max(...data,1);
+  const bw=Math.max(10,cw/n-6);
+  data.forEach((v,i)=>{
+    const x=pad.l+i*(cw/n)+(cw/n-bw)/2;
+    const bh=ch*(v/max); const y=pad.t+ch-bh;
+    ctx.fillStyle=color; ctx.fillRect(x,y,bw,bh);
+    ctx.fillStyle='#1a1f2e'; ctx.font='bold 9px Inter'; ctx.textAlign='center';
+    ctx.fillText(v,x+bw/2,y-3);
+    ctx.fillStyle='#6b7280'; ctx.font='8px Inter';
+    ctx.fillText(labels[i]||'',x+bw/2,H-4);
+  });
+}
+
+document.addEventListener('DOMContentLoaded',loadAll);
+</script>
+</body>
+</html>

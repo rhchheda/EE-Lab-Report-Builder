@@ -1,0 +1,5 @@
+# Google service-account credentials — never commit, secrets live in GitHub Actions
+kle-ctie-ee-lab-*.json
+*.serviceaccount.json
+
+node_modules/
