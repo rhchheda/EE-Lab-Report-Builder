@@ -304,29 +304,44 @@ function driveMatchFor(week){
   }) || null;
 }
 
+function looksLikeWeeklyReport(name){
+  return /(\d{1,2})[\s\-–](\d{1,2})[\s\-–]([A-Za-z]{3,})/.test(String(name||''));
+}
+
 function renderReports(){
   const root=document.getElementById('reports-root');
-  if (!reportWeeks.length){
-    root.innerHTML='<div class="empty"><div class="icon">🗂</div><p>No weekly reports synced yet.</p></div>';
-    return;
-  }
-  const rows=[...reportWeeks].reverse().map(w=>{
+  const matchedDriveIds = new Set();
+  const syncedRows = [...reportWeeks].reverse().map(w=>{
     const all=[...(w.routineTasks||[]),...(w.projectTasks||[])];
     const pct = all.length ? Math.round(all.filter(t=>t.status==='completed').length/all.length*100) : 0;
     const match = driveMatchFor(w);
-    return {w,pct,match};
+    if (match) matchedDriveIds.add(match.id);
+    return {period:weekLabel(w), tasks:all.length, pct, match, hasStats:true};
   });
+  // Drive files that look like weekly reports but haven't been synced with task data yet —
+  // this is what surfaces your full past-reports archive even before each week is built in
+  // the Report Builder.
+  const archiveRows = driveIndex
+    .filter(f=>!matchedDriveIds.has(f.id) && looksLikeWeeklyReport(f.name))
+    .sort((a,b)=>String(b.name||'').localeCompare(String(a.name||'')))
+    .map(f=>({period:f.name, tasks:null, pct:null, match:f, hasStats:false}));
+  const allRows=[...syncedRows, ...archiveRows];
+
+  if (!allRows.length){
+    root.innerHTML=`<div class="empty"><div class="icon">🗂</div><p>No weekly reports yet.</p>${!driveIndex.length?'<p style="font-size:11px;margin-top:6px">The Drive archive will appear here once the Sync Google Data workflow has run at least once.</p>':''}</div>`;
+    return;
+  }
   root.innerHTML = `
-  ${!driveIndex.length?'<div class="banner banner-info">ℹ Drive index not available yet — run the sync-drive-index workflow (or wait for its schedule) to enable live "View in Drive" links.</div>':''}
+  ${!driveIndex.length?'<div class="banner banner-info">ℹ Drive index not available yet — add the GDRIVE_SA_KEY secret and run the "Sync Google Data" workflow (Actions tab) to pull in your full report archive.</div>':''}
   <div class="card">
-    <h3>Weekly Reports</h3>
+    <h3>Weekly Reports <small>${syncedRows.length} synced with task data &middot; ${archiveRows.length} from Drive archive only</small></h3>
     <table>
       <thead><tr><th>Period</th><th>Tasks</th><th>Completion</th><th>Drive Report</th></tr></thead>
       <tbody>
-        ${rows.map(r=>`<tr>
-          <td>${weekLabel(r.w)}</td>
-          <td>${(r.w.routineTasks||[]).length+(r.w.projectTasks||[]).length}</td>
-          <td>${r.pct}%</td>
+        ${allRows.map(r=>`<tr>
+          <td>${esc(r.period)}</td>
+          <td>${r.hasStats?r.tasks:'<span style="color:var(--muted)">—</span>'}</td>
+          <td>${r.hasStats?r.pct+'%':'<span style="color:var(--muted)">—</span>'}</td>
           <td>${r.match?`<a class="link" href="${esc(r.match.webViewLink)}" target="_blank">View in Drive →</a>`:'<span class="badge badge-missing">not matched</span>'}</td>
         </tr>`).join('')}
       </tbody>
@@ -364,11 +379,19 @@ function renderTrends(){
 }
 
 // ═══ CANVAS CHARTS (ported from index.html) ═══════════════
+function sizeCanvasForDPR(canvas,H){
+  const dpr=window.devicePixelRatio||1;
+  const W=canvas.offsetWidth||400;
+  canvas.width=W*dpr; canvas.height=H*dpr;
+  canvas.style.width=W+'px'; canvas.style.height=H+'px';
+  const ctx=canvas.getContext('2d');
+  ctx.setTransform(dpr,0,0,dpr,0,0);
+  return {ctx,W,H};
+}
 function drawLineChart(id,labels,data,label,color,ymin,ymax){
   const canvas=document.getElementById(id); if(!canvas) return;
-  const ctx=canvas.getContext('2d');
-  const W=canvas.offsetWidth||400,H=canvas.height||130;
-  canvas.width=W; canvas.height=H;
+  const H=canvas.height||130;
+  const {ctx,W}=sizeCanvasForDPR(canvas,H);
   const pad={l:34,r:12,t:12,b:28};
   const cw=W-pad.l-pad.r, ch=H-pad.t-pad.b;
   ctx.clearRect(0,0,W,H); ctx.fillStyle='#f8f9fc'; ctx.fillRect(0,0,W,H);
@@ -395,9 +418,8 @@ function drawLineChart(id,labels,data,label,color,ymin,ymax){
 }
 function drawBarChart(id,labels,data,label,color){
   const canvas=document.getElementById(id); if(!canvas) return;
-  const ctx=canvas.getContext('2d');
-  const W=canvas.offsetWidth||400,H=canvas.height||130;
-  canvas.width=W; canvas.height=H;
+  const H=canvas.height||130;
+  const {ctx,W}=sizeCanvasForDPR(canvas,H);
   const pad={l:26,r:8,t:12,b:24};
   const cw=W-pad.l-pad.r, ch=H-pad.t-pad.b;
   ctx.clearRect(0,0,W,H); ctx.fillStyle='#f8f9fc'; ctx.fillRect(0,0,W,H);
